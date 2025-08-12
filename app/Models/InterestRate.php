@@ -5,13 +5,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Group extends Model
+class InterestRate extends Model
 {
     use HasFactory;
     protected $fillable = [
-        'name',
-        'join_code',
-        'owner_id',
+        'interest_mode_id',
+        'group_id',
+        'trace_id',
+        'group_id',
+        'fee',
+        'group_cycle_id',
+        'description',
         'status'
     ];
 }

@@ -18,6 +18,7 @@ class Payment extends Model
         'amount',
         'interest',
         'transaction_reference',
-        'description'
+        'description',
+        'approved_by'
     ];
 }

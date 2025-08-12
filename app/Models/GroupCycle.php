@@ -5,13 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Group extends Model
+class GroupCycle extends Model
 {
     use HasFactory;
     protected $fillable = [
         'name',
-        'join_code',
-        'owner_id',
+        'group_id',
+        'trace_id',
+        'start_date',
+        'end_date',
         'status'
     ];
 }

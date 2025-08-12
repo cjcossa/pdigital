@@ -5,19 +5,21 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Payment extends Model
+class GroupUserProfit extends Model
 {
     use HasFactory;
     protected $fillable = [
-        'loan_id',
         'user_id',
         'group_id',
         'user_wallet_id',
         'group_cycle_id',
         'trace_id',
-        'amount',
-        'interest',
+        'savings_amount',
+        'social_amount',
+        'interest_amount',
         'transaction_reference',
-        'description'
+        'description',
+        'calculated_at',
+        'status'
     ];
 }

@@ -3,14 +3,22 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Str;
 
-class User extends Authenticatable
+class PreUser extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
+
+    protected $table = 'pre_users';
+    public $incrementing = false;
+    protected $keyType = 'string';
+    public $timestamps = false;
 
     /**
      * The attributes that are mass assignable.
@@ -24,7 +32,9 @@ class User extends Authenticatable
         'primary_phone',
         'phones',
         'doc_details',
-        'beneficiaries'
+        'beneficiaries',
+        'trace_id',
+        'status'
     ];
 
     /**
@@ -44,4 +54,15 @@ class User extends Authenticatable
     protected $casts = [
         'pin' => 'hashed',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+        static::saving(function ($model) {
+            if (empty($model->id)) {
+                $model->id = (string) Str::uuid();
+            }
+            $model->created_at = Carbon::now();
+        });
+    }
 }

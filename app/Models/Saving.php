@@ -10,9 +10,13 @@ class Saving extends Model
     use HasFactory;
     protected $fillable = [
         'user_id',
+        'group_id',
+        'user_wallet_id',
+        'group_cycle_id',
+        'trace_id',
         'amount',
-        'social_fund',
-        'saving_date',
+        'social_amount',
+        'transaction_reference',
         'description'
     ];
 }

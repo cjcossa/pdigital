@@ -11,11 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('groups', function (Blueprint $table) {
-            $table->id();
-            $table->string('name', 50);
-            $table->integer('interest_rate')->default(10);
-            $table->text('permissions');
+        Schema::create('audits', function (Blueprint $table) {
+            $table->uuid('id');
+            $table->string('table_name');
+            $table->string('action');
+            $table->json('new_record');
+            $table->json('old_record');
+            $table->uuid('record_id'); 
             $table->timestamps();
         });
     }
@@ -25,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('groups');
+        Schema::dropIfExists('audits');
     }
 };

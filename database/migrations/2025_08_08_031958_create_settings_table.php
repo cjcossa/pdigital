@@ -11,19 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
+        Schema::create('settings', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('first_name', 150);
-            $table->string('last_name', 150);
-            $table->string('primary_phone', 9)->unique();
-            $table->json('phones')->nullable();  
-            $table->json('doc_details')->nullable();
-            $table->json('beneficiaries')->nullable();
-            $table->string('pin', 256);
+            $table->string('key');
+            $table->string('value');
             $table->uuid('trace_id');
-            $table->uuid('trace_update_id');
+            $table->uuid('trace_update_id')->nullable();
+            $table->string('type');
             $table->unsignedTinyInteger('status', false);
-            $table->rememberToken();
+            $table->text('description')->nullable();
+            $table->foreign('trace_id')->references('id')->on('users')->onDelete('restrict');
+            $table->foreign('trace_update_id')->references('id')->on('users')->onDelete('restrict');
             $table->timestamps();
         });
     }
@@ -33,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
+        Schema::dropIfExists('settings');
     }
 };

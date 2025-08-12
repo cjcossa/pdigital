@@ -5,13 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Group extends Model
+class LoanRequestApproval extends Model
 {
     use HasFactory;
     protected $fillable = [
-        'name',
-        'join_code',
-        'owner_id',
-        'status'
+        'loan_request_id',
+        'approved_by'
     ];
 }

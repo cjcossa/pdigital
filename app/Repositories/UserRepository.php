@@ -26,7 +26,13 @@ class UserRepository implements UserRepositoryInterface
 
     public function createUser(array $userDetails) 
     {
-        return User::create($userDetails);
+        try
+        {
+            
+        }catch(\Exception $e)
+        {
+
+        }
     }
 
     public function updateUser($userId, array $newDetails) 
