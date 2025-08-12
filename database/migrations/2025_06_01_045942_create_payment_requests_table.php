@@ -27,7 +27,7 @@ return new class extends Migration
             $table->foreign('loan_id')->references('id')->on('loans')->onDelete('restrict');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('restrict');
             $table->foreign('group_id')->references('id')->on('groups')->onDelete('restrict');
-            $table->foreign('user_wallet_id')->references('id')->on('group_user_wallets')->onDelete('restrict');
+            $table->foreign('user_wallet_id')->references('id')->on('user_wallets')->onDelete('restrict');
             $table->foreign('approved_by')->references('id')->on('users')->onDelete('restrict');
             $table->foreign('group_cycle_id')->references('id')->on('group_cycles')->onDelete('restrict');
             $table->timestamps();
