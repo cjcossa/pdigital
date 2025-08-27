@@ -26,6 +26,10 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 
 Route::post('/pre-users', [PreUserController::class, 'store']);
+Route::post('/pre-users-list', [PreUserController::class, 'index']);
+Route::post('/pre-users-update', [PreUserController::class, 'update']);
+
+
 
 Route::get('users', [UserController::class, 'index']);
 Route::get('users/{id}', [UserController::class, 'show']);

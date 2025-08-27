@@ -40,7 +40,7 @@ class PreUserRepository implements PreUserRepositoryInterface
                 'doc_details' => json_encode($preUserData->docDetails),
                 'beneficiaries' => json_encode($preUserData->beneficiaries),
                 'trace_id' => $preUserData->trace === '' ? null : $preUserData->trace,
-                'status' => Status::P_USER_PENDING
+                'status' => $preUserData->status
             ]);
 
             DB::commit();
@@ -68,23 +68,43 @@ class PreUserRepository implements PreUserRepositoryInterface
     {
         try
         {
-            if($preUserData->status)
-            {
-                $this->_data = $this->_preUserModel->where('status', $preUserData->status)
-                                                ->orderBy('updated_at', 'asc')
-                                                ->take(10)
-                                                ->get();
-            }else if($preUserData->id)
-            {
-                $this->_data = $this->_preUserModel->where('id', $preUserData->id)
-                                                ->first();
-            }
+            if($preUserData->id)
+                $this->getPreUserById($preUserData->id);
+            else if ($preUserData->primaryPhone)
+                $this->getPreUserByPhone($preUserData->primaryPhone);
+            else if($preUserData->status)
+                $this->getPreUserByStatus($preUserData->status);
+
+            //return $this->getData();
             
             return new ResponseData(
                 success: true, 
-                data: $this->_data
+                data: $this->getData()
             );                                  
 
+        }catch(\Exception $e)
+        {
+            Log::error('Erro ao busar pre users: '. $e->getMessage());
+
+            return new ResponseData(
+                success: false, 
+                data: $this->getData()
+            );
+        }
+    }
+
+    public function updatePreUser(PreUserData $preUserData)
+    {
+        try
+        {
+
+            $this->_data = $this->_preUserModel->where('id', $preUserData->id)
+                                                ->update($preUserData->filteredArray());
+            return new ResponseData(
+                success: true, 
+                data: $this->getData()
+            );                                  
+            
         }catch(\Exception $e)
         {
             Log::error('Erro ao busar pre users: '. $e->getMessage());
@@ -96,37 +116,28 @@ class PreUserRepository implements PreUserRepositoryInterface
         }
     }
 
-    public function updatePreUser(PreUserData $preUserData)
+    private function getPreUserById($id)
     {
-        try
-        {
-            $this->_preUserData = [
-                'first_name' => $preUserData->firstname,
-                'last_name' => $preUserData->lastname,
-                'pin' => $preUserData->pin,
-                'primary_phone' => $preUserData->primaryPhone,
-                'phones' => json_encode($preUserData->phones),
-                'doc_details' => json_encode($preUserData->docDetails),
-                'beneficiaries' => json_encode($preUserData->beneficiaries),
-                'status' => $preUserData->status
-            ];
+        $this->_data = $this->_preUserModel->where('id', $id)
+                                            ->first();     
+    }
 
-            $this->_data = $this->_preUserModel->where('id', $preUserData->id)
-                                                ->update($this->_preUserData);
+    private function getPreUserByPhone($phone)
+    {
+        $this->_data = $this->_preUserModel->where('primary_phone', operator: $phone)
+                                            ->first();     
+    }
 
-            return new ResponseData(
-                success: true, 
-                data: $this->_data
-            );                                  
-            
-        }catch(\Exception $e)
-        {
-            Log::error('Erro ao busar pre users: '. $e->getMessage());
+    public function getData()
+    {
+        return $this->_data;
+    }
 
-            return new ResponseData(
-                success: false, 
-                data: $this->_data
-            );
-        }
+    private function getPreUserByStatus($status, $records = 10)
+    {
+        $this->_data = $this->_preUserModel->where('status', $status)
+                                            ->orderBy('updated_at', 'asc')
+                                            ->take($records)
+                                            ->get();
     }
 }

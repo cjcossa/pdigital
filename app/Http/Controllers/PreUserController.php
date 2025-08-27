@@ -22,12 +22,17 @@ class PreUserController extends Controller
         $this->_response = [];
     }
 
-    // public function index(): JsonResponse 
-    // {
-    //     return response()->json([
-    //         'data' => $this->userRepository->getAllUsers()
-    //     ]);
-    // }
+    public function index(Request $request): JsonResponse 
+    {
+        $this->_response = $this->_preUserRepository->getPreUser(PreUserData::fromArray($request->all()));
+
+        return ApiResponse::send(
+            success: $this->_response->success, 
+            message: $this->_response->message, 
+            status: $this->_response->success ? 200 : 500, 
+            data: $this->_response->data
+        );
+    }
 
     public function store(Request $request) 
     {
@@ -72,20 +77,17 @@ class PreUserController extends Controller
     //     ]);
     // }
 
-    // public function update(Request $request): JsonResponse 
-    // {
-    //     $userId = $request->route('id');
-    //     $userDetails = $request->only([
-    //         'name',
-    //         'phone_number',
-    //         'group',
-    //         'password'
-    //     ]);
+    public function update(Request $request): JsonResponse 
+    {
+        $this->_response = $this->_preUserRepository->updatePreUser(PreUserData::fromArray($request->all()));
 
-    //     return response()->json([
-    //         'data' => $this->userRepository->updateUser($userId, $userDetails)
-    //     ]);
-    // }
+        return ApiResponse::send(
+            success: $this->_response->success, 
+            message: $this->_response->message, 
+            status: $this->_response->success ? 200 : 500, 
+            data: $this->_response->data
+        );
+    }
 
     // public function destroy(Request $request): JsonResponse 
     // {
