@@ -11,4 +11,6 @@ interface UserRepositoryInterface
     public function updateUser($userId, array $newDetails);
     public function getUsersBygroup($group);
     public function getUsersToSaving();
+    public function loginUser(array $userDetails);
+    public function logoutUser(Object $token);
 }

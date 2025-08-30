@@ -54,7 +54,7 @@ class BaseRepository
         if(!$this->getStatus())
         {
             $this->rollBack();
-            Log::error($this->getMessage());
+            $this->log();
         }
             
         return new ResponseData(
@@ -76,5 +76,10 @@ class BaseRepository
     protected function rollBack()
     {
         DB::rollBack();
+    }
+
+    protected function log()
+    {
+        Log::error($this->getMessage());
     }
 }

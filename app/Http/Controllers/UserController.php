@@ -88,4 +88,23 @@ class UserController extends Controller
             'data' => $this->userRepository->getUsersToSaving()
         ]);
     }
+
+    public function authenticate(Request $request): JsonResponse
+    {   
+        $userDetails = $request->only([
+            'primary_phone',
+            'pin'
+        ]);
+        
+        return response()->json([
+            'data' => $this->userRepository->loginUser($userDetails)
+        ]);
+    }
+
+    public function logout(Request $request): JsonResponse
+    {   
+        return response()->json([
+            'data' => $this->userRepository->logoutUser($request)
+        ]);
+    }
 }

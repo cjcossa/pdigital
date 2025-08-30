@@ -24,10 +24,12 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+Route::post('users.auth', [UserController::class, 'authenticate'])->name('login');
 
-Route::post('/pre-users', [PreUserController::class, 'store']);
-Route::post('/pre-users-list', [PreUserController::class, 'index']);
-Route::post('/pre-users-update', [PreUserController::class, 'update']);
+
+Route::post('/pre.users', [PreUserController::class, 'store']);
+Route::post('/pre.users.list', [PreUserController::class, 'index']);
+Route::post('/pre.users.update', [PreUserController::class, 'update']);
 
 
 

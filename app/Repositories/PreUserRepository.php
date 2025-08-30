@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 use App\DTO\PreUserData;
 use App\DTO\ResponseData;
 use App\Enums\Status;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class PreUserRepository implements PreUserRepositoryInterface
@@ -98,8 +99,12 @@ class PreUserRepository implements PreUserRepositoryInterface
         try
         {
 
+            $this->_data = $preUserData->filteredArray();
+
+            $this->_data ['updated_at'] = Carbon::now();
+
             $this->_data = $this->_preUserModel->where('id', $preUserData->id)
-                                                ->update($preUserData->filteredArray());
+                                                ->update($this->_data);
             return new ResponseData(
                 success: true, 
                 data: $this->getData()
@@ -108,7 +113,7 @@ class PreUserRepository implements PreUserRepositoryInterface
         }catch(\Exception $e)
         {
             Log::error('Erro ao busar pre users: '. $e->getMessage());
-
+            
             return new ResponseData(
                 success: false, 
                 data: $this->_data

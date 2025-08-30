@@ -11,8 +11,10 @@ use App\Interfaces\PreUserRepositoryInterface;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-
-
+use Laravel\Sanctum\PersonalAccessToken;
+use Laravel\Sanctum\NewAccessToken;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class UserRepository extends BaseRepository implements UserRepositoryInterface 
 {
@@ -43,22 +45,22 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface
 
     public function createUser(array $userDetails) 
     {
-        try
+
+        $migrated = 0;
+        $error = 0;
+
+        parent::setData(
+            $this->_preUserRepository->getPreUser(
+                        PreUserData::fromArray([
+                        'status' => Status::CONFIRMED->value
+                ]))->data
+        );
+
+        if(parent::isData())
         {
-            parent::begin();
-
-            parent::setData(
-                $this->_preUserRepository->getPreUser(
-                            PreUserData::fromArray([
-                            'status' => Status::CONFIRMED->value
-                    ]))->data
-            );
-
-            //parent::setStatus(false);
-
-            if(parent::isData())
+            foreach(parent::getData() as $preUserData)
             {
-                foreach(parent::getData() as $preUserData)
+                try
                 {
                     $this->_userModel->create([
                         'id' => $preUserData->id,
@@ -73,21 +75,38 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface
                         'status' => Status::ACTIVE->value,
                         'created_at' => Carbon::now()
                     ]);
+
                     $this->_preUserRepository->updatePreUser(
                         PreUserData::fromArray([
                         'status' => Status::MIGRATED->value,
-                        'id' => $preUserData->id
+                        'id' => $preUserData->id,
                     ]));
-                    parent::commit();
-                }
-                
-                parent::setStatus(true);
-            }
 
-        }catch(\Exception $e)
-        {
-            parent::setMessage(__('messages.register_failed'). $e->getMessage());
+                    $migrated++;
+
+                }catch(\Exception $e)
+                {
+                    parent::setMessage(__('messages.register_failed'). $e->getMessage());
+                    parent::log();
+
+                    $this->_preUserRepository->updatePreUser(
+                        PreUserData::fromArray([
+                        'status' => Status::ERROR->value,
+                        'id' => $preUserData->id,
+                    ]));
+
+                    $error++;
+                    continue;
+                }
+            }
+            
         }
+
+        parent::setStatus(true);
+        parent::setData([
+            'migrated' => $migrated,
+            'error' => $error
+        ]);
 
         return parent::sendResponse();
     }
@@ -106,5 +125,59 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface
     {
         return User::where('group', '<>', Group::G_ETUSR)
                     ->get();
+    }
+
+    public function loginUser(array $userDetails)
+    {
+        $userDetails['pin'] = Hash::make($userDetails['pin']);
+        if(Auth::attempt($userDetails))
+        {
+            $user = Auth::user();
+           
+            $token = $this->createAccessToken($user->primary_phone);
+            
+            return $this->getAccessToken($token);
+        }
+
+        return $userDetails;
+    }
+    public function logoutUser(Object $token)
+    {
+        Log::info($token->user()->currentAccessToken());
+        $this->deleteAccessToken($token->user()->currentAccessToken());
+        
+        return Auth::check();
+    }
+
+    public function createAccessToken(string $username): NewAccessToken
+    {
+        $user = User::query()
+                    ->where("primary_phone", $username)
+                    ->first();
+
+        return $user->createToken("auth_token");
+    }
+
+    public function deleteAccessToken(PersonalAccessToken $token)
+    {
+        $token->delete();
+    }
+    public function deleteAllAccessTokens($tokens)
+    {
+        foreach ($tokens as $token) {
+            $token->delete();
+        }
+    }
+
+    public function getAccessToken($token)
+    {
+        return [
+            'username' => $token->accessToken->tokenable->primary_phone,
+            'name' => $token->accessToken->tokenable->first_name,
+            'token' => $token->plainTextToken,
+            'group' => $token->accessToken->tokenable->group,
+            'id' => $token->accessToken->tokenable->id,
+            //'permissions' => $this->groupRepository->getGroupById($token->accessToken->tokenable->group)->permissions
+        ];
     }
 }
