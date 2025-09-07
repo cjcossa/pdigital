@@ -18,7 +18,7 @@ return new class extends Migration
             $table->uuid('role_id');
             $table->uuid('group_cycle_id');
             $table->uuid('trace_id');
-            $table->unsignedTinyInteger('status', false);
+            $table->string('status');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('restrict');
             $table->foreign('trace_id')->references('id')->on('users')->onDelete('restrict');
             $table->foreign('group_id')->references('id')->on('groups')->onDelete('restrict');

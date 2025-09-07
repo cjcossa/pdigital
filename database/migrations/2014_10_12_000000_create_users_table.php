@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('pin', 256);
             $table->uuid('trace_id');
             $table->uuid('trace_update_id')->nullable();
-            $table->unsignedTinyInteger('status', false);
+            $table->string('status');
             $table->rememberToken();
             $table->timestamps();
         });

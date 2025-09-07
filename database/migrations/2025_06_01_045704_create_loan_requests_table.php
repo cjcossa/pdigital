@@ -22,7 +22,7 @@ return new class extends Migration
             $table->decimal('amount', 12, 2);
             $table->string('phone_number');
             $table->string('type');//MM - Member to Member or GM - Group to Member
-            $table->unsignedTinyInteger('status', false);
+            $table->string('status');
             $table->text('description')->nullable();
             $table->foreign('user_id')->references('id')->on('users')->onDelete('restrict');
             $table->foreign('group_id')->references('id')->on('groups')->onDelete('restrict');

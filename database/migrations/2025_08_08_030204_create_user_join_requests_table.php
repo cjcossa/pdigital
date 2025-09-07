@@ -16,10 +16,10 @@ return new class extends Migration
             $table->uuid('user_id');
             $table->uuid('group_id');
             $table->uuid('role_id');
-            $table->uuid('group_cycle_id');
+            $table->uuid('group_cycle_id')->nullable();
             $table->uuid('trace_id');
             $table->uuid('approved_by');
-            $table->unsignedTinyInteger('status', false);
+            $table->string('status');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('restrict');
             $table->foreign('trace_id')->references('id')->on('users')->onDelete('restrict');
             $table->foreign('approved_by')->references('id')->on('users')->onDelete('restrict');

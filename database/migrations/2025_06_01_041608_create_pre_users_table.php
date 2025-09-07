@@ -23,7 +23,7 @@ return new class extends Migration
             $table->string('transaction_reference')->nullable();
             $table->uuid('trace_id')->nullable();
             $table->uuid('trace_update_id')->nullable();
-            $table->unsignedTinyInteger('status', false);
+            $table->string('status');
             $table->foreign('trace_id')->references('id')->on('users')->onDelete('restrict');
             $table->foreign('trace_update_id')->references('id')->on('users')->onDelete('restrict');
             $table->timestamps();

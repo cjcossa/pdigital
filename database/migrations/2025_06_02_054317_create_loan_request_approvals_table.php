@@ -16,7 +16,7 @@ return new class extends Migration
             $table->uuid('loan_request_id');
             $table->uuid('approved_by');
             $table->date('approved_at');
-            $table->unsignedTinyInteger('status', false);
+            $table->string('status');
             $table->foreign('approved_by')->references('id')->on('users')->onDelete('cascade');
             $table->timestamps();
         });

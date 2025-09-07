@@ -16,7 +16,7 @@ class PreUserData
         public ?array  $docDetails = null,
         public ?array  $beneficiaries = null,
         public ?string $trace = null,
-        public ?int $status = null
+        public ?string $status = null
     ) {}
 
     public static function fromArray(array $data): self

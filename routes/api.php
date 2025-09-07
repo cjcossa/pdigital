@@ -1,8 +1,11 @@
 <?php
 
+use App\Http\Controllers\GroupController;
+use App\Http\Controllers\GroupCycleController;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PreUserController;
+use App\Http\Controllers\RoleController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
@@ -20,16 +23,29 @@ use App\Http\Controllers\SavingController;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+Route::middleware('auth:sanctum')->post('/user', function (Request $request) {
     return $request->user();
 });
+
+//Route::middleware(['auth:sanctum','checkTokenExpiry'])->get('/me', fn(Request $r) => $r->user());
+
 
 Route::post('users.auth', [UserController::class, 'authenticate'])->name('login');
 
 
 Route::post('/pre.users', [PreUserController::class, 'store']);
-Route::post('/pre.users.list', [PreUserController::class, 'index']);
+//Route::post('/pre.users.list', [PreUserController::class, 'index']);
+Route::middleware(['auth:sanctum', 'checkTokenExpiry'])->group( function () {
+    Route::post('/pre.users.list', [PreUserController::class, 'index']);
+});
 Route::post('/pre.users.update', [PreUserController::class, 'update']);
+
+
+Route::post('/groups.create', [GroupController::class, 'store']);
+Route::post('/roles.create', [RoleController::class, 'store']);
+Route::post('/group.cycles.create', [GroupCycleController::class, 'store']);
+
+
 
 
 

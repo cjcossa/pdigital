@@ -19,7 +19,7 @@ return new class extends Migration
             $table->uuid('interest_mode_id');
             $table->uuid('trace_id');
             $table->decimal('fee', 10, 2);
-            $table->unsignedTinyInteger('status', false);
+            $table->string('status');
             $table->text('description')->nullable();
             $table->foreign('group_id')->references('id')->on('groups')->onDelete('restrict');
             $table->foreign('trace_id')->references('id')->on('users')->onDelete('restrict');

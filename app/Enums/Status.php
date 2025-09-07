@@ -2,25 +2,25 @@
 
 namespace App\Enums;
 
-enum Status: int
+enum Status: string
 { 
-    case ERROR = -1;
-    case ACTIVE = 0;
-    case INACTIVE = 1;
-    case PENDING = 2;
-    case CONFIRMED = 3;
-    case MIGRATED = 4;
+    case ERROR = 'ERRO';
+    case ACTIVE = 'Activo';
+    case INACTIVE = 'Inactivo';
+    case PENDING = 'Pendente';
+    case CONFIRMED = 'Confirmado';
+    case MIGRATED = 'Migrado';
 
-    public function description(): string
-    {
-        return match($this) {
-            self::ACTIVE => 'Activo',
-            self::INACTIVE => 'Inactivo',
-            self::PENDING => 'Pendente',
-            self::CONFIRMED => 'Confirmado',
-            self::MIGRATED => 'Migrado'
-        };
-    }
+    // public function description(): string
+    // {
+    //     return match($this) {
+    //         self::ACTIVE => 'Activo',
+    //         self::INACTIVE => 'Inactivo',
+    //         self::PENDING => 'Pendente',
+    //         self::CONFIRMED => 'Confirmado',
+    //         self::MIGRATED => 'Migrado'
+    //     };
+    // }
 }
 
 

@@ -2,6 +2,9 @@
 
 namespace App\Interfaces;
 
+use App\DTO\UserData;
+use Illuminate\Foundation\Auth\User;
+
 interface UserRepositoryInterface 
 {
     public function getAllUsers();
@@ -11,6 +14,6 @@ interface UserRepositoryInterface
     public function updateUser($userId, array $newDetails);
     public function getUsersBygroup($group);
     public function getUsersToSaving();
-    public function loginUser(array $userDetails);
+    public function loginUser(UserData $userData);
     public function logoutUser(Object $token);
 }

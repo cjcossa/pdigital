@@ -22,7 +22,7 @@ return new class extends Migration
             $table->decimal('social_amount', 12, 2)->nullable();
             $table->decimal('interest_amount', 12, 2)->nullable();
             $table->date('calculated_at'); 
-            $table->unsignedTinyInteger('status', false);
+            $table->string('status');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('restrict');
             $table->foreign('group_id')->references('id')->on('groups')->onDelete('restrict');
             $table->foreign('user_wallet_id')->references('id')->on('user_wallets')->onDelete('restrict');

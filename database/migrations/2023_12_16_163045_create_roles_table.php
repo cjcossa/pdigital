@@ -13,10 +13,11 @@ return new class extends Migration
     {
         Schema::create('roles', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('name', 50);
-            $table->text('permissions');
-            $table->text('description');
-            $table->unsignedTinyInteger('status', false);
+            $table->string('name', 100);
+            $table->text('description')->nullable();
+            $table->string('status');
+            $table->uuid('trace_id');
+            $table->foreign('trace_id')->references('id')->on('users')->onDelete('restrict');
             $table->timestamps();
         });
     }

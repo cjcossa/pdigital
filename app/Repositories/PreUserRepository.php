@@ -12,6 +12,7 @@ use App\DTO\ResponseData;
 use App\Enums\Status;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class PreUserRepository implements PreUserRepositoryInterface
 {
@@ -35,7 +36,7 @@ class PreUserRepository implements PreUserRepositoryInterface
             $this->_data = $this->_preUserModel->create([
                 'first_name' => $preUserData->firstname,
                 'last_name' => $preUserData->lastname,
-                'pin' => $preUserData->pin,
+                'pin' => Hash::make($preUserData->pin),
                 'primary_phone' => $preUserData->primaryPhone,
                 'phones' => json_encode($preUserData->phones),
                 'doc_details' => json_encode($preUserData->docDetails),

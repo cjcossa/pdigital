@@ -49,7 +49,12 @@ class User extends Authenticatable
      *
      * @var array<string, string>
      */
-    protected $casts = [
-        'pin' => 'hashed',
-    ];
+    // protected $casts = [
+    //     'pin' => 'hashed',
+    // ];
+
+    public function getAuthPassword()
+    {
+        return $this->pin;
+    }
 }

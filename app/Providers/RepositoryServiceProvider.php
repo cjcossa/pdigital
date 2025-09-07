@@ -2,17 +2,21 @@
 
 namespace App\Providers;
 
+use App\Interfaces\GroupCycleRepositoryInterface;
 use App\Interfaces\GroupRepositoryInterface;
 use App\Interfaces\LoanRepositoryInterface;
 use App\Interfaces\PaymentRepositoryInterface;
 use App\Interfaces\PreUserRepositoryInterface;
+use App\Interfaces\RoleRepositoryInterface;
 use App\Interfaces\SavingRepositoryInterface;
 use Illuminate\Support\ServiceProvider;
 use App\Interfaces\UserRepositoryInterface;
+use App\Repositories\GroupCycleRepository;
 use App\Repositories\GroupRepository;
 use App\Repositories\LoanRepository;
 use App\Repositories\PaymentRepository;
 use App\Repositories\PreUserRepository;
+use App\Repositories\RoleRepository;
 use App\Repositories\SavingRepository;
 use App\Repositories\UserRepository;
 
@@ -30,7 +34,8 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(PaymentRepositoryInterface::class, PaymentRepository::class);
         $this->app->bind(GroupRepositoryInterface::class, GroupRepository::class);
         $this->app->bind(PreUserRepositoryInterface::class, PreUserRepository::class);
-
+        $this->app->bind(RoleRepositoryInterface::class, RoleRepository::class);
+        $this->app->bind(GroupCycleRepositoryInterface::class, GroupCycleRepository::class);
     }
 
     /**

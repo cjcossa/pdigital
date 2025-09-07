@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('permissions', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('name');
-            $table->unsignedTinyInteger('status', false);
-            $table->string('description');
+            $table->string('status');
+            $table->string('description')->nullable();
             $table->uuid('trace_id');
             $table->foreign('trace_id')->references('id')->on('users')->onDelete('restrict');
             $table->timestamps();

@@ -18,7 +18,7 @@ return new class extends Migration
             $table->uuid('wallet_id');
             $table->string('wallet_code');
             $table->string('phone_number');
-            $table->unsignedTinyInteger('status', false);
+            $table->string('status');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('restrict');
             $table->foreign('trace_id')->references('id')->on('users')->onDelete('restrict');
             $table->timestamps();

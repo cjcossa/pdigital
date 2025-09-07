@@ -18,7 +18,7 @@ return new class extends Migration
             $table->uuid('group_cycle_id');//update ao aprovar o pedido
             $table->uuid('approved_by');
             $table->uuid('trace_id');
-            $table->unsignedTinyInteger('status', false);
+            $table->string('status');
             $table->text('mensagem')->nullable();
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('trace_id')->references('id')->on('users')->onDelete('cascade');

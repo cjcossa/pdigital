@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('code')->unique(); 
             $table->string('name');
             $table->text('description')->nullable();
-            $table->unsignedTinyInteger('status', false);
+            $table->string('status');
             $table->uuid('trace_id');
             $table->uuid('trace_update_id');
             $table->foreign('trace_id')->references('id')->on('users')->onDelete('restrict');

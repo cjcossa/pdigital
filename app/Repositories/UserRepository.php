@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Consts\Group;
 use App\DTO\PreUserData;
+use App\DTO\UserData;
 use App\Enums\Status;
 use App\Interfaces\UserRepositoryInterface;
 use App\Models\User;
@@ -127,23 +128,49 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface
                     ->get();
     }
 
-    public function loginUser(array $userDetails)
+    public function loginUser(UserData $userData)
     {
-        $userDetails['pin'] = Hash::make($userDetails['pin']);
-        if(Auth::attempt($userDetails))
-        {
-            $user = Auth::user();
+       //$userDetails['pin'] = Hash::make($userDetails['pin']);
+        // if(Auth::attempt($userDetails))
+        // {
+        //     $user = Auth::user();
            
-            $token = $this->createAccessToken($user->primary_phone);
+        //     $token = $this->createAccessToken($user->primary_phone);
             
-            return $this->getAccessToken($token);
+        //     return $this->getAccessToken($token);
+        // }
+
+        // return $userDetails;
+
+        try
+        {
+            parent::setData(
+                $this->_userModel->where('primary_phone', $userData->primaryPhone)->first()
+            );
+
+            if(parent::getData())
+            {
+                parent::setMessage(__('messages.user_loggedin'));
+                parent::setStatus(Hash::check($userData->pin, parent::getData()->pin));
+
+                parent::setData(
+                $this->getAccessToken(
+                    $this->createAccessToken(parent::getData()->primary_phone)
+                    )
+                );
+            }
+            
+        }catch(\Exception $e)
+        {
+            parent::setMessage(__('messages.register_failed'). $e->getMessage());
+            parent::log();
         }
 
-        return $userDetails;
+       return parent::sendResponse();
     }
     public function logoutUser(Object $token)
     {
-        Log::info($token->user()->currentAccessToken());
+        //Log::info($token->user()->currentAccessToken());
         $this->deleteAccessToken($token->user()->currentAccessToken());
         
         return Auth::check();
@@ -155,7 +182,12 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface
                     ->where("primary_phone", $username)
                     ->first();
 
-        return $user->createToken("auth_token");
+        $token = $user->createToken("auth_token");
+        $accessToken = $user->tokens()->latest()->first();
+        $accessToken->expires_at = Carbon::now()->addMinutes(5);
+        $accessToken->save();
+
+        return $token;
     }
 
     public function deleteAccessToken(PersonalAccessToken $token)
@@ -171,13 +203,15 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface
 
     public function getAccessToken($token)
     {
+
         return [
-            'username' => $token->accessToken->tokenable->primary_phone,
+            'primary_phone' => $token->accessToken->tokenable->primary_phone,
             'name' => $token->accessToken->tokenable->first_name,
             'token' => $token->plainTextToken,
-            'group' => $token->accessToken->tokenable->group,
+            //'group' => $token->accessToken->tokenable->group,
             'id' => $token->accessToken->tokenable->id,
             //'permissions' => $this->groupRepository->getGroupById($token->accessToken->tokenable->group)->permissions
         ];
     }
+    
 }

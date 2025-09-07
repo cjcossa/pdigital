@@ -16,9 +16,9 @@ return new class extends Migration
             $table->char('join_code', 8)->unique();
             $table->string('name', 200);
             $table->uuid('owner_id');
-            $table->unsignedTinyInteger('status', false);
-            $table->string('description');
-            $table->string('image');
+            $table->string('status');
+            $table->string('description')->nullable();
+            $table->string('image')->nullable();
             $table->foreign('owner_id')->references('id')->on('users')->onDelete('restrict');
             $table->timestamps();
         });

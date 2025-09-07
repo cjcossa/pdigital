@@ -24,7 +24,7 @@ return new class extends Migration
             $table->string('phone_number');
             $table->string('type');//MM - Member to Member or GM - Group to Member
             $table->date('payment_date');
-            $table->unsignedTinyInteger('status', false);
+            $table->string('status');
             $table->string('transaction_reference')->nullable();
             $table->text('description')->nullable();
             $table->foreign('user_id')->references('id')->on('users')->onDelete('restrict');

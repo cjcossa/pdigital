@@ -19,7 +19,7 @@ return new class extends Migration
             $table->decimal('amount', 12, 2);
             $table->string('operation');
             $table->text('description')->nullable();
-            $table->unsignedTinyInteger('status', false);
+            $table->string('status');
             $table->date('processed_at')->nullable();
             $table->date('wallet_processed_date')->nullable();
             $table->uuid('group_id')->nullable();

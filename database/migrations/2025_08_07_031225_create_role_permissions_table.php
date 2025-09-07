@@ -15,7 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->uuid('role_id');
             $table->uuid('permission_id');
-            $table->unsignedTinyInteger('status', false);
+            $table->string('status');
             $table->uuid('trace_id');
             $table->foreign('trace_id')->references('id')->on('users')->onDelete('restrict');
             $table->timestamps();
