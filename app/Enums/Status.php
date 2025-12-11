@@ -4,12 +4,14 @@ namespace App\Enums;
 
 enum Status: string
 { 
-    case ERROR = 'ERRO';
+    case ERROR = 'Erro';
     case ACTIVE = 'Activo';
     case INACTIVE = 'Inactivo';
     case PENDING = 'Pendente';
     case CONFIRMED = 'Confirmado';
     case MIGRATED = 'Migrado';
+    case APPROVED = 'Aprovado';
+    case PROCESSED = 'Processado';
 
     // public function description(): string
     // {

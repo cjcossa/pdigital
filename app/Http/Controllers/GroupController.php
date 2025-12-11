@@ -39,7 +39,7 @@ class GroupController extends Controller
         {
             $validated = $request->validate([
                 'gname' => 'required|string',
-                'oid' => 'required|string',
+                'oid' => 'required|uuid|exists:users,id',
                 'jcod' => 'required|string',
                 'img' => 'nullable|string',
                 'desc' => 'nullable|string'

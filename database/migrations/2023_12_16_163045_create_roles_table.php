@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('roles', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('name', 100);
+            $table->string('name', 100)->unique();
             $table->text('description')->nullable();
             $table->string('status');
             $table->uuid('trace_id');

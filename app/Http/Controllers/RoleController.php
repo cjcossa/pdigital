@@ -27,7 +27,7 @@ class RoleController extends Controller
         try
         {
             $validated = $request->validate([
-                'rname' => 'required|string',
+                'rname' => 'required|string|unique:roles,name',
                 'tid' => 'required|uuid|exists:users,id',
                 'desc' => 'nullable|string'
             ]);

@@ -18,7 +18,7 @@ return new class extends Migration
             $table->uuid('role_id');
             $table->uuid('group_cycle_id')->nullable();
             $table->uuid('trace_id');
-            $table->uuid('approved_by');
+            $table->uuid('approved_by')->nullable();
             $table->string('status');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('restrict');
             $table->foreign('trace_id')->references('id')->on('users')->onDelete('restrict');

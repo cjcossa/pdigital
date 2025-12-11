@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\GroupCycleController;
+use App\Http\Controllers\GroupUserController;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PreUserController;
@@ -10,7 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SavingController;
-
+use App\Http\Controllers\UserJoinRequestController;
 
 /*
 |--------------------------------------------------------------------------
@@ -33,17 +34,27 @@ Route::middleware('auth:sanctum')->post('/user', function (Request $request) {
 Route::post('users.auth', [UserController::class, 'authenticate'])->name('login');
 
 
-Route::post('/pre.users', [PreUserController::class, 'store']);
+Route::post('/pre.users.create', [PreUserController::class, 'store']);
 //Route::post('/pre.users.list', [PreUserController::class, 'index']);
 Route::middleware(['auth:sanctum', 'checkTokenExpiry'])->group( function () {
     Route::post('/pre.users.list', [PreUserController::class, 'index']);
 });
+
 Route::post('/pre.users.update', [PreUserController::class, 'update']);
 
-
 Route::post('/groups.create', [GroupController::class, 'store']);
+
 Route::post('/roles.create', [RoleController::class, 'store']);
+
 Route::post('/group.cycles.create', [GroupCycleController::class, 'store']);
+
+Route::post('/user.requests.create', [UserJoinRequestController::class, 'store']);
+
+Route::post('/user.requests.update', [UserJoinRequestController::class, 'update']);
+
+Route::post('/group.users.create', [GroupUserController::class, 'store']);
+
+
 
 
 
@@ -51,7 +62,7 @@ Route::post('/group.cycles.create', [GroupCycleController::class, 'store']);
 
 Route::get('users', [UserController::class, 'index']);
 Route::get('users/{id}', [UserController::class, 'show']);
-Route::post('users', [UserController::class, 'store']);
+Route::post('users.create', [UserController::class, 'store']);
 Route::put('users/{id}', [UserController::class, 'update']);
 Route::delete('users/{id}', [UserController::class, 'delete']);
 Route::get('users.group', [UserController::class, 'user']);

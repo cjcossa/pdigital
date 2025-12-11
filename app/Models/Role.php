@@ -19,7 +19,8 @@ class Role extends Model
     protected $fillable = [
         'name',
         'description',
-        'status'
+        'status',
+        'trace_id'
     ];
 
     protected static function boot()
