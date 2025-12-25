@@ -23,19 +23,20 @@ class SavingController extends Controller
         ]);
     }
 
-    public function store(Request $request): JsonResponse 
+    public function store(Request $request): JsonResponse
     {
-        $savingDetails = $request->only([
-            'amount',
-            'social_fund',
-            'saving_date',
-            'user_id',
-            'description'
+        $validated = $request->validate([
+            'amount'        => 'required|numeric|min:1',
+            'social_fund'   => 'required|numeric|min:0',
+            'saving_date'   => 'required|date',
+            'user_id'       => 'required|exists:users,id',
+            'group_cycle_id' => 'required|exists:group_cycles,id',
+            'description'   => 'nullable|string|max:255',
         ]);
 
         return response()->json(
             [
-                'data' => $this->savingRepository->createSaving($savingDetails)
+                'data' => $this->savingRepository->createSaving($validated)
             ],
             Response::HTTP_CREATED
         );
@@ -53,16 +54,17 @@ class SavingController extends Controller
     public function update(Request $request): JsonResponse 
     {
         $savingId = $request->route('id');
-        $savingDetails = $request->only([
-            'amount',
-            'social_fund',
-            'saving_date',
-            'user_id',
-            'description'
+        $validated = $request->validate([
+            'amount'        => 'sometimes|numeric|min:1',
+            'social_fund'   => 'sometimes|numeric|min:0',
+            'saving_date'   => 'sometimes|date',
+            'user_id'       => 'sometimes|exists:users,id',
+            'group_cycle_id' => 'required|exists:group_cycles,id',
+            'description'   => 'nullable|string|max:255',
         ]);
 
         return response()->json([
-            'data' => $this->savingRepository->updateSaving($savingId, $savingDetails)
+            'data' => $this->savingRepository->updateSaving($savingId, $validated)
         ]);
     }
 

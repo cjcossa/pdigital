@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Interfaces\SavingRepositoryInterface;
 use App\Models\Saving;
 use Carbon\Carbon;
+use App\Models\GroupCycle;
 
 class SavingRepository implements SavingRepositoryInterface 
 {
@@ -19,21 +20,32 @@ class SavingRepository implements SavingRepositoryInterface
         return Saving::findOrFail($savingId);
     }
 
+    public function getSavingsByCycle($cycleId)
+    {
+        return Saving::where('group_cycle_id', $cycleId)->get();
+    }
+
     public function deleteSaving($savingId) 
     {
         Saving::destroy($savingId);
     }
-
-    public function createSaving(array $savingDetails) 
+    public function createSaving(array $savingDetails)
     {
+        GroupCycle::where('id', $savingDetails['group_cycle_id'])
+                ->where('status', 'active')
+                ->firstOrFail();
+
         return Saving::create($savingDetails);
     }
 
+    
     public function updateSaving($savingId, array $newDetails) 
     {
-        return Saving::whereId($savingId)->update($newDetails);
+        $saving = Saving::findOrFail($savingId);
+        $saving->update($newDetails);
+        return $saving;
     }
-    
+
     public function getSavingBalanceByUser($userId)
     {
         return Saving::where('user_id', $userId)
@@ -87,9 +99,14 @@ class SavingRepository implements SavingRepositoryInterface
             }
         }
 
-        if(!empty($userId))
-        {
-            return $this->getSavingByUser($userId);
-        }
+        // if(!empty($userId))
+        // {
+        //     return $this->getSavingByUser($userId);
+        // }
+        return Saving::all();
+
     }
+
+
+
 }

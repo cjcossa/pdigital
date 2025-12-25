@@ -18,6 +18,7 @@ return new class extends Migration
             $table->uuid('trace_id');
             $table->date('start_date')->nullable();  
             $table->date('end_date')->nullable();
+            $table->decimal('contribution_amount', 12, 2);
             $table->string('status');
             $table->foreign('trace_id')->references('id')->on('users')->onDelete('restrict');
             $table->foreign('group_id')->references('id')->on('groups')->onDelete('restrict');
