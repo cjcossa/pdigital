@@ -13,6 +13,7 @@ class InterestRateSeeder extends Seeder
 {
     public function run(): void
     {
+        $mode = \App\Models\InterestMode::first(); // pega o primeiro modo de juros já criado
         $role = \App\Models\Role::firstOrFail(); // pega algum role existente
         $group = Group::firstOrFail();
         $cycle = GroupCycle::firstOrFail();
@@ -20,7 +21,7 @@ class InterestRateSeeder extends Seeder
 
         InterestRate::create([
             'id' => Str::uuid(),
-            'interest_mode_id' => Str::uuid(), 
+            'interest_mode_id' => $mode->id, // <- aqui não geramos novo UUID
             'role_id' => $role->id,                 
             'group_id' => $group->id,
             'group_cycle_id' => $cycle->id,

@@ -13,11 +13,13 @@ class DatabaseSeeder extends Seeder
    public function run(): void
 {
     $this->call([
-        UserSeeder::class,   // ← trace_id depende disto
-        RoleSeeder::class,   // ← agora existe role
-        GroupSeeder::class,
-        GroupCycleSeeder::class,
-        InterestRateSeeder::class,
-    ]);
+    UserSeeder::class,
+    RoleSeeder::class,
+    GroupSeeder::class,
+    GroupCycleSeeder::class,
+    InterestModeSeeder::class,   // ← novo
+    InterestRateSeeder::class,   // agora seguro
+    SavingsSeeder::class,        // ← executado por último
+]);
 }
 }

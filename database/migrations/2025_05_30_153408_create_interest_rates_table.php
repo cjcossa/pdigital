@@ -25,7 +25,7 @@ return new class extends Migration
             $table->foreign('trace_id')->references('id')->on('users')->onDelete('restrict');
             $table->foreign('role_id')->references('id')->on('roles')->onDelete('restrict');
             $table->foreign('group_cycle_id')->references('id')->on('group_cycles')->onDelete('restrict');
-            $table->foreign('interest_mode_id')->references('id')->on('roles')->onDelete('restrict');
+            $table->foreign('interest_mode_id')->references('id')->on('interest_modes')->onDelete('restrict');
             $table->unique(['interest_mode_id', 'group_id', 'trace_id', 'group_cycle_id']);
             $table->timestamps();
         });
