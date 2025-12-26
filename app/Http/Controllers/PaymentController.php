@@ -22,7 +22,6 @@ class PaymentController extends Controller
             'data' => $this->paymentRepository->getAllPayments()
         ]);
     }
-
     public function store(Request $request): JsonResponse 
     {
         $paymentDetails = $request->only([

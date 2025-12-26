@@ -50,6 +50,9 @@ class PaymentRepository implements PaymentRepositoryInterface
         return null;
     }
 
+
+    
+
     public function updatePayment($paymentId, array $newDetails) 
     {
         return Payment::whereId($paymentId)->update($newDetails);
