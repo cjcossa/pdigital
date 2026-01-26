@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Group;
 use App\Models\User;
 use App\Models\GroupCycle;
+use App\Models\Periodicity;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -14,6 +15,7 @@ class GroupCycleSeeder extends Seeder
     {
         $group = Group::firstOrFail();
         $user = User::firstOrFail(); // pega o usuário já criado
+        $periodicity = Periodicity::firstOrFail(); // pega a periodicidade já criada
 
         GroupCycle::create([
             'id' => Str::uuid(),
@@ -21,8 +23,10 @@ class GroupCycleSeeder extends Seeder
             'group_id' => $group->id,
             'start_date' => now(),
             'end_date' => now()->addMonths(6),
+            'contribution_amount' => 150.00,
             'status' => 1,
             'trace_id' => $user->id, // aponta para o usuário existente
+            'periodicity_id' => $periodicity->id,
         ]);
     }
 }
