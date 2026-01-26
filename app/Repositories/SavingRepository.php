@@ -50,7 +50,7 @@ class SavingRepository implements SavingRepositoryInterface
     {
         return Saving::where('user_id', $userId)
                         ->selectRaw('SUM(amount) AS balance')
-                        ->selectRaw('SUM(social_fund) AS sfund')
+                        ->selectRaw('SUM(social_amount) AS samount')
                         ->first();                     
     }
 
@@ -60,14 +60,14 @@ class SavingRepository implements SavingRepositoryInterface
         {
             $date = Carbon::parse($date);
             return Saving::selectRaw('SUM(amount) AS total')
-                            ->selectRaw('SUM(social_fund) AS sfund')
+                            ->selectRaw('SUM(social_amount) AS samount')
                             ->whereYear('saving_date', '=', $date->year)
                             ->whereMonth('saving_date', '=', $date->month)
                             ->get(); 
         }
 
         return Saving::selectRaw('SUM(amount) AS total')
-                        ->selectRaw('SUM(social_fund) AS sfund')
+                        ->selectRaw('SUM(social_amount) AS samount')
                         ->get()
                         ->first(); 
     }

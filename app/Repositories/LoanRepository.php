@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Consts\Group;
 use App\Consts\State;
 use App\Interfaces\LoanRepositoryInterface;
+use App\Interfaces\PaymentRepositoryInterface;
 use App\Interfaces\SavingRepositoryInterface;
 use App\Interfaces\UserRepositoryInterface;
 use App\Models\Loan;
@@ -41,11 +42,23 @@ class LoanRepository implements LoanRepositoryInterface
         Loan::destroy($loanId);
     }
 
+    // public function createLoan(array $loanDetails) 
+    // {
+    //     if($this->getLoanEligibilityByUser($loanDetails['user_id'], $loanDetails))
+    //         return Loan::create($loanDetails);
+
+    //     return null;
+    // }
+
     public function createLoan(array $loanDetails) 
     {
-        if($this->getLoanEligibilityByUser($loanDetails['user_id'], $loanDetails))
+        $eligible = $this->getLoanEligibilityByUser($loanDetails['user_id'], $loanDetails);
+        Log::info('Eligibility check', ['eligible' => $eligible]);
+
+        if($eligible)
             return Loan::create($loanDetails);
 
+        Log::warning('User not eligible for loan', ['user_id' => $loanDetails['user_id']]);
         return null;
     }
 
@@ -141,4 +154,40 @@ class LoanRepository implements LoanRepositoryInterface
                     ->where('status', '<>', State::L_PDSTUS)
                     ->get(['loans.*', 'users.name']);
     }
+
+
+    //New things
+    
+    public function calculateTotalAmount(float $amount, float $interestRate): float
+    {
+        return $amount + ($amount * $interestRate / 100);
+    }
+
+    public function getRemainingAmount(string $loanId): float
+    {
+        $loan = $this->getLoanById($loanId);
+
+        $paid = app(PaymentRepositoryInterface::class)
+                ->getPaymentAmounByLoan($loanId)
+                ->total_paid ?? 0;
+
+        return $loan->amount - $paid;
+    }
+
+    public function canAcceptPayment(string $loanId, float $amount): bool
+    {
+        return $amount <= $this->getRemainingAmount($loanId);
+    }
+
+    public function updateLoanStatusIfPaid(string $loanId): void
+    {
+        $remaining = $this->getRemainingAmount($loanId);
+
+        if ($remaining <= 0) {
+            $this->updateLoan($loanId, [
+                'status' => 'paid'
+            ]);
+        }
+    }
+
 }

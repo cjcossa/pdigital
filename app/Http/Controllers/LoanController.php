@@ -3,17 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Interfaces\LoanRepositoryInterface;
+use App\Interfaces\PaymentRepositoryInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-
+use Illuminate\Support\Facades\Log;
 class LoanController extends Controller 
 {
     private LoanRepositoryInterface $loanRepository;
+    private PaymentRepositoryInterface $paymentRepository;
 
-    public function __construct(LoanRepositoryInterface $loanRepository) 
+    public function __construct(LoanRepositoryInterface $loanRepository, PaymentRepositoryInterface $paymentRepository) 
     {
         $this->loanRepository = $loanRepository;
+        $this->paymentRepository = $paymentRepository;
     }
 
     public function index(): JsonResponse 
@@ -25,23 +28,120 @@ class LoanController extends Controller
 
     public function store(Request $request): JsonResponse 
     {
+        // $loanDetails = $request->only([
+        //     'amount',
+        //     'user_id',
+        //     'amount',
+        //     'guarantor',
+        //     'loan_date',
+        //     'description',
+        //     'type'
+        // ]);
+
+         // Pega todos os campos do request que são relevantes
         $loanDetails = $request->only([
-            'amount',
             'user_id',
+            'user_request_id',
+            'group_id',
+            'group_cycle_id',
+            'interest_rate_id',
+            'guarantor_id',
+            'trace_id',
             'amount',
-            'guarantor',
-            'loan_date',
-            'description',
-            'type'
+            'phone_number',
+            'type',
+            'payment_date',
+            'status',
+            'transaction_reference',
+            'description'
         ]);
+
+          // DEBUG: mostra no console (terminal do Laravel)
+        Log::info('2 Loan request data:', $loanDetails);
+
+        // Outra opção para ver direto no browser/console do Postman
+        // dd($loanDetails); // <- isto interrompe a execução e imprime o array
+
+        $loan = $this->loanRepository->createLoan($loanDetails);
 
         return response()->json(
             [
-                'data' => $this->loanRepository->createLoan($loanDetails)
+                'data' => $loan
             ],
             Response::HTTP_CREATED
         );
+
+
+
+        // return response()->json(
+        //     [
+        //         'data' => $this->loanRepository->createLoan($loanDetails)
+        //     ],
+        //     Response::HTTP_CREATED
+        // );
+
+
     }
+//new things
+//Simulacao de alguns metodos
+public function simulate(Request $request)
+{
+     $request->validate([
+            'amount' => 'required|numeric|min:1',
+            'interest_rate' => 'required|numeric|min:0',
+        ]);
+
+    return response()->json([
+        'total' => $this->loanRepository->calculateTotalAmount(
+            $request->amount,
+            $request->interest_rate
+        )
+    ]);
+}
+
+
+
+public function remainingAmount(string $loanId)
+{
+    Log::info('Loan remaining amount request received', [
+        'loan_id' => $loanId,
+        'endpoint' => 'GET /api/loans/{loanId}/remaining'
+    ]);
+
+    $remaining = $this->loanRepository->getRemainingAmount($loanId);
+
+    Log::info('Loan remaining amount calculated', [
+        'loan_id' => $loanId,
+        'remaining' => $remaining
+    ]);
+
+    return response()->json([
+        'loan_id'   => $loanId,
+        'remaining' => $remaining
+    ]);
+}
+
+
+public function pay(Request $request, $loanId)
+{
+     $request->validate([
+         'amount' => 'required|numeric|min:1',
+     ]);
+
+    if (!$this->loanRepository->canAcceptPayment($loanId, $request->amount)) {
+        return response()->json(['error' => 'Pagamento excede o valor em dívida'], 422);
+    }
+
+    $this->paymentRepository->createPayment($loanId, $request->amount);
+
+    $this->loanRepository->updateLoanStatusIfPaid($loanId);
+
+    return response()->json(['message' => 'Pagamento registado com sucesso']);
+}
+
+////////////////
+
+
 
     public function show(Request $request): JsonResponse 
     {
