@@ -2,17 +2,22 @@
 
 namespace App\Repositories;
 
+use App\Enums\Status;
 use App\Interfaces\SavingRepositoryInterface;
 use App\Models\Saving;
 use Carbon\Carbon;
 use App\Models\GroupCycle;
+use Illuminate\Support\Facades\DB;
 
 class SavingRepository implements SavingRepositoryInterface 
 {
     public function getAllSavings() 
     {
         return Saving::join('users', 'users.id', '=', 'savings.user_id')
-                    ->get(['savings.*', 'users.name']);
+                    ->get([
+                        'savings.*',
+                        DB::raw("CONCAT(users.first_name, ' ', users.last_name) as name"),
+                    ]);
     }
 
     public function getSavingById($savingId) 
@@ -32,7 +37,7 @@ class SavingRepository implements SavingRepositoryInterface
     public function createSaving(array $savingDetails)
     {
         GroupCycle::where('id', $savingDetails['group_cycle_id'])
-                ->where('status', 'active')
+                ->where('status', Status::ACTIVE->value)
                 ->firstOrFail();
 
         return Saving::create($savingDetails);
@@ -63,12 +68,11 @@ class SavingRepository implements SavingRepositoryInterface
                             ->selectRaw('SUM(social_amount) AS samount')
                             ->whereYear('saving_date', '=', $date->year)
                             ->whereMonth('saving_date', '=', $date->month)
-                            ->get(); 
+                            ->first(); 
         }
 
         return Saving::selectRaw('SUM(amount) AS total')
                         ->selectRaw('SUM(social_amount) AS samount')
-                        ->get()
                         ->first(); 
     }
 
@@ -99,10 +103,10 @@ class SavingRepository implements SavingRepositoryInterface
             }
         }
 
-        // if(!empty($userId))
-        // {
-        //     return $this->getSavingByUser($userId);
-        // }
+        if(!empty($userId))
+        {
+            return $this->getSavingByUser($userId);
+        }
         return Saving::all();
 
     }

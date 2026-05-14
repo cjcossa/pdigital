@@ -31,6 +31,7 @@ class SavingsSeeder extends Seeder
                 'amount' => 1000000000, // 1B
                 'phone_number' => '840000000',
                 'status' => 'active',
+                'saving_date' => now()->toDateString(),
                 'social_amount' => 0,
                 'transaction_reference' => 'TEST_REF_001',
                 'description' => 'Empréstimo inicial do grupo',

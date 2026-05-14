@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\Status;
 use App\Models\Group;
 use App\Models\User;
 use App\Models\GroupCycle;
@@ -24,7 +25,7 @@ class GroupCycleSeeder extends Seeder
             'start_date' => now(),
             'end_date' => now()->addMonths(6),
             'contribution_amount' => 150.00,
-            'status' => 1,
+            'status' => Status::ACTIVE->value,
             'trace_id' => $user->id, // aponta para o usuário existente
             'periodicity_id' => $periodicity->id,
         ]);
