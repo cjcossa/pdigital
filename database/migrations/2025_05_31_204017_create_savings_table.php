@@ -21,6 +21,7 @@ return new class extends Migration
             $table->decimal('amount', 12, 2);
             $table->string('phone_number');
             $table->string('status');
+            $table->date('saving_date');
             $table->decimal('social_amount', 12, 2)->nullable();
             $table->string('transaction_reference')->nullable();
             $table->text('description')->nullable();

@@ -91,6 +91,15 @@ Route::get('loans.total', [LoanController::class, 'total']);
 Route::get('loans.users', [LoanController::class, 'loan']);
 Route::get('loans.topay', [LoanController::class, 'topay']);
 
+Route::prefix('loans')->group(function () {
+    Route::get('{loan}/remaining', [LoanController::class, 'remainingAmount'])
+        ->whereUuid('loan');
+
+    Route::post('{loan}/payments', [PaymentController::class, 'store'])
+        ->whereUuid('loan');
+
+    Route::post('simulate', [LoanController::class, 'simulate']);
+});
 
 Route::get('payments', [PaymentController::class, 'index']);
 Route::get('payments/{id}', [PaymentController::class, 'show']);

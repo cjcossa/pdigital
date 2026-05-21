@@ -2,16 +2,22 @@
 
 namespace App\Repositories;
 
+use App\Enums\Status;
 use App\Interfaces\SavingRepositoryInterface;
 use App\Models\Saving;
 use Carbon\Carbon;
+use App\Models\GroupCycle;
+use Illuminate\Support\Facades\DB;
 
 class SavingRepository implements SavingRepositoryInterface 
 {
     public function getAllSavings() 
     {
         return Saving::join('users', 'users.id', '=', 'savings.user_id')
-                    ->get(['savings.*', 'users.name']);
+                    ->get([
+                        'savings.*',
+                        DB::raw("CONCAT(users.first_name, ' ', users.last_name) as name"),
+                    ]);
     }
 
     public function getSavingById($savingId) 
@@ -19,26 +25,37 @@ class SavingRepository implements SavingRepositoryInterface
         return Saving::findOrFail($savingId);
     }
 
+    public function getSavingsByCycle($cycleId)
+    {
+        return Saving::where('group_cycle_id', $cycleId)->get();
+    }
+
     public function deleteSaving($savingId) 
     {
         Saving::destroy($savingId);
     }
-
-    public function createSaving(array $savingDetails) 
+    public function createSaving(array $savingDetails)
     {
+        GroupCycle::where('id', $savingDetails['group_cycle_id'])
+                ->where('status', Status::ACTIVE->value)
+                ->firstOrFail();
+
         return Saving::create($savingDetails);
     }
 
+    
     public function updateSaving($savingId, array $newDetails) 
     {
-        return Saving::whereId($savingId)->update($newDetails);
+        $saving = Saving::findOrFail($savingId);
+        $saving->update($newDetails);
+        return $saving;
     }
-    
+
     public function getSavingBalanceByUser($userId)
     {
         return Saving::where('user_id', $userId)
                         ->selectRaw('SUM(amount) AS balance')
-                        ->selectRaw('SUM(social_fund) AS sfund')
+                        ->selectRaw('SUM(social_amount) AS samount')
                         ->first();                     
     }
 
@@ -48,15 +65,14 @@ class SavingRepository implements SavingRepositoryInterface
         {
             $date = Carbon::parse($date);
             return Saving::selectRaw('SUM(amount) AS total')
-                            ->selectRaw('SUM(social_fund) AS sfund')
+                            ->selectRaw('SUM(social_amount) AS samount')
                             ->whereYear('saving_date', '=', $date->year)
                             ->whereMonth('saving_date', '=', $date->month)
-                            ->get(); 
+                            ->first(); 
         }
 
         return Saving::selectRaw('SUM(amount) AS total')
-                        ->selectRaw('SUM(social_fund) AS sfund')
-                        ->get()
+                        ->selectRaw('SUM(social_amount) AS samount')
                         ->first(); 
     }
 
@@ -91,5 +107,10 @@ class SavingRepository implements SavingRepositoryInterface
         {
             return $this->getSavingByUser($userId);
         }
+        return Saving::all();
+
     }
+
+
+
 }

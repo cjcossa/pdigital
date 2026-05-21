@@ -6,6 +6,7 @@ interface SavingRepositoryInterface
 {
     public function getAllSavings();
     public function getSavingById($savingId);
+    public function getSavingsByCycle($cycleId);
     public function deleteSaving($savingId);
     public function createSaving(array $SavingDetails);
     public function updateSaving($savingId, array $newDetails);
