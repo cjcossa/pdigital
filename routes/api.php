@@ -5,8 +5,10 @@ use App\Http\Controllers\GroupCycleController;
 use App\Http\Controllers\GroupUserController;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\PreUserController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\RolePermissionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
@@ -54,6 +56,9 @@ Route::post('/user.requests.update', [UserJoinRequestController::class, 'update'
 
 Route::post('/group.users.create', [GroupUserController::class, 'store']);
 
+Route::post('/permissions.create', [PermissionController::class, 'store']);
+
+Route::post('/role.permissions.create', [RolePermissionController::class, 'store']);
 
 
 

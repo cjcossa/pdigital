@@ -11,7 +11,7 @@ use Illuminate\Support\Str;
 class GroupUser extends Model
 {
     use HasFactory;
-    protected $table = 'user_join_requests';
+    protected $table = 'group_users';
     public $incrementing = false;
     protected $keyType = 'string';
     public $timestamps = false;

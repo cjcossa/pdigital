@@ -7,7 +7,9 @@ use App\Interfaces\GroupRepositoryInterface;
 use App\Interfaces\GroupUserRepositoryInterface;
 use App\Interfaces\LoanRepositoryInterface;
 use App\Interfaces\PaymentRepositoryInterface;
+use App\Interfaces\PermissionRepositoryInterface;
 use App\Interfaces\PreUserRepositoryInterface;
+use App\Interfaces\RolePermissionRepositoryInterface;
 use App\Interfaces\RoleRepositoryInterface;
 use App\Interfaces\SavingRepositoryInterface;
 use App\Interfaces\UserJoinRequestRepositoryInterface;
@@ -18,7 +20,9 @@ use App\Repositories\GroupRepository;
 use App\Repositories\GroupUserRepository;
 use App\Repositories\LoanRepository;
 use App\Repositories\PaymentRepository;
+use App\Repositories\PermissionRepository;
 use App\Repositories\PreUserRepository;
+use App\Repositories\RolePermissionRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\SavingRepository;
 use App\Repositories\UserJoinRequestRepository;
@@ -42,6 +46,8 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(GroupCycleRepositoryInterface::class, GroupCycleRepository::class);
         $this->app->bind(UserJoinRequestRepositoryInterface::class, UserJoinRequestRepository::class);
         $this->app->bind(GroupUserRepositoryInterface::class, GroupUserRepository::class);
+        $this->app->bind(PermissionRepositoryInterface::class, PermissionRepository::class);
+        $this->app->bind(RolePermissionRepositoryInterface::class, RolePermissionRepository::class);
 
 
     }

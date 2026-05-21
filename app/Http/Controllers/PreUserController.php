@@ -14,23 +14,24 @@ use Illuminate\Validation\ValidationException;
 class PreUserController extends Controller 
 {
     private PreUserRepositoryInterface $_preUserRepository;
-    private $_response;
 
     public function __construct(PreUserRepositoryInterface $preUserRepository) 
     {
         $this->_preUserRepository = $preUserRepository;
-        $this->_response = [];
     }
 
     public function index(Request $request): JsonResponse 
     {
-        $this->_response = $this->_preUserRepository->getPreUser(PreUserData::fromArray($request->all()));
+        
+        parent::setResponse(
+            $this->_preUserRepository->getPreUser(PreUserData::fromArray($request->all()))
+        );
 
         return ApiResponse::send(
-            success: $this->_response->success, 
-            message: $this->_response->message, 
-            status: $this->_response->success ? 200 : 500, 
-            data: $this->_response->data
+            success: parent::getResponse()->success, 
+            message: parent::getResponse()->message, 
+            status: parent::getResponse()->success ? 200 : 500, 
+            data: parent::getResponse()->data
         );
     }
 
@@ -47,13 +48,13 @@ class PreUserController extends Controller
                 'phones.*' => 'string'
             ]);
         
-            $this->_response = $this->_preUserRepository->createPreUser(PreUserData::fromArray($validated));
+            parent::setResponse($this->_preUserRepository->createPreUser(PreUserData::fromArray($validated)));
 
             return ApiResponse::send(
-                success: $this->_response->success, 
-                message: $this->_response->message, 
-                status: $this->_response->success ? 201 : 500, 
-                data: $this->_response->data
+                success: parent::getResponse()->success, 
+                message: parent::getResponse()->message, 
+                status: parent::getResponse()->success ? 201 : 500, 
+                data: parent::getResponse()->data
             );
 
         }
@@ -79,13 +80,13 @@ class PreUserController extends Controller
 
     public function update(Request $request): JsonResponse 
     {
-        $this->_response = $this->_preUserRepository->updatePreUser(PreUserData::fromArray($request->all()));
+        parent::setResponse($this->_preUserRepository->updatePreUser(PreUserData::fromArray($request->all())));
 
         return ApiResponse::send(
-            success: $this->_response->success, 
-            message: $this->_response->message, 
-            status: $this->_response->success ? 200 : 500, 
-            data: $this->_response->data
+            success: parent::getResponse()->success, 
+            message: parent::getResponse()->message, 
+            status: parent::getResponse()->success ? 200 : 500, 
+            data: parent::getResponse()->data
         );
     }
 
