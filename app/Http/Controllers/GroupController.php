@@ -21,25 +21,31 @@ class GroupController extends Controller
         $this->_groupRepository = $groupRepository;
     }
 
-    // public function index(Request $request): JsonResponse 
-    // {
-    //     // parent::getResponse() = $this->_groupRepository->getPreUser(PreUserData::fromArray($request->all()));
+    public function index(Request $request): JsonResponse
+    {
+        return response()->json([
+            'data' => $this->_groupRepository->getGroupsForUser($request->user())
+        ]);
+    }
 
-    //     // return ApiResponse::send(
-    //     //     success: parent::getResponse()->success, 
-    //     //     message: parent::getResponse()->message, 
-    //     //     status: parent::getResponse()->success ? 200 : 500, 
-    //     //     data: parent::getResponse()->data
-    //     // );
-    // }
+    public function show(Request $request): JsonResponse
+    {
+        return response()->json([
+            'data' => $this->_groupRepository->getAccessibleGroupById(
+                $request->route('id'),
+                $request->user()
+            )
+        ]);
+    }
 
     public function store(Request $request) 
     {
         try
         {
+            abort_unless($this->_groupRepository->canManageGroups($request->user()), 403);
+
             $validated = $request->validate([
                 'gname' => 'required|string',
-                'oid' => 'required|uuid|exists:users,id',
                 'jcod' => 'required|string',
                 'img' => 'nullable|string',
                 'desc' => 'nullable|string'
@@ -47,7 +53,7 @@ class GroupController extends Controller
         
             parent::setResponse(
                 $this->_groupRepository->createGroup(
-                    GroupData::fromArray($validated)
+                    GroupData::fromArray($validated + ['oid' => $request->user()->id])
                     )
             );
 
@@ -79,39 +85,30 @@ class GroupController extends Controller
     //     ]);
     // }
 
-    // public function update(Request $request): JsonResponse 
-    // {
-    //     // parent::getResponse() = $this->_groupRepository->updatePreUser(PreUserData::fromArray($request->all()));
+    public function update(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => 'sometimes|required|string|max:200',
+            'join_code' => 'sometimes|required|string|size:8|unique:groups,join_code,' . $request->route('id') . ',id',
+            'image' => 'sometimes|nullable|string',
+            'description' => 'sometimes|nullable|string',
+        ]);
 
-    //     // return ApiResponse::send(
-    //     //     success: parent::getResponse()->success, 
-    //     //     message: parent::getResponse()->message, 
-    //     //     status: parent::getResponse()->success ? 200 : 500, 
-    //     //     data: parent::getResponse()->data
-    //     // );
-    // }
+        $groupId = $request->route('id');
+        $this->_groupRepository->getAccessibleGroupById($groupId, $request->user());
+        $this->_groupRepository->updateGroup($groupId, $validated);
 
-    // public function destroy(Request $request): JsonResponse 
-    // {
-    //     $userId = $request->route('id');
-    //     $this->userRepository->deleteUser($userId);
+        return response()->json([
+            'data' => $this->_groupRepository->getAccessibleGroupById($groupId, $request->user())
+        ]);
+    }
 
-    //     return response()->json(null, Response::HTTP_NO_CONTENT);
-    // }
+    public function delete(Request $request): JsonResponse
+    {
+        $groupId = $request->route('id');
+        $this->_groupRepository->getAccessibleGroupById($groupId, $request->user());
+        $this->_groupRepository->deleteGroup($groupId);
 
-    // public function user(Request $request): JsonResponse
-    // {
-    //     $group = $request->input('group');
-        
-    //     return response()->json([
-    //         'data' => $this->userRepository->getUsersByGroup($group)
-    //     ]);
-    // }
-
-    // public function saving(): JsonResponse
-    // {   
-    //     return response()->json([
-    //         'data' => $this->userRepository->getUsersToSaving()
-    //     ]);
-    // }
+        return response()->json(null, Response::HTTP_NO_CONTENT);
+    }
 }

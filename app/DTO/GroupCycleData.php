@@ -15,6 +15,7 @@ class GroupCycleData
         public ?string $trace_id = null,
         public ?string $start_date = null,
         public ?string $end_date = null,
+        public ?float $contribution_amount = null,
         public ?string $status = null
     ) {}
 
@@ -27,6 +28,7 @@ class GroupCycleData
             trace_id: $data['tid'] ?? '',
             start_date: $data['sdate'] ?? '',
             end_date: $data['edate'] ?? '',
+            contribution_amount: isset($data['contribution_amount']) ? (float) $data['contribution_amount'] : null,
             status: $data['stus'] ?? Status::ACTIVE->value
         );
     }

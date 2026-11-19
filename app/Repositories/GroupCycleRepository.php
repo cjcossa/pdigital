@@ -15,6 +15,11 @@ class GroupCycleRepository extends BaseRepository implements GroupCycleRepositor
         $this->_groupCycleModel = $groupCycleModel;
     }
 
+    public function getGroupCycles(string $groupId)
+    {
+        return $this->_groupCycleModel->where('group_id', $groupId)->get();
+    }
+
     public function createGroupCycle(GroupCycleData $groupCycleData) 
     {
         try

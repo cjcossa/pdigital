@@ -2,44 +2,53 @@
 
 namespace App\Repositories;
 
-use App\Consts\State;
-use App\Interfaces\GroupRepositoryInterface;
 use App\Interfaces\LoanRepositoryInterface;
 use App\Interfaces\PaymentRepositoryInterface;
+use App\Models\InterestRate;
 use App\Models\Payment;
+use App\Repositories\Concerns\ScopesToGroupAccess;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Response;
 
 class PaymentRepository implements PaymentRepositoryInterface
 {
+    use ScopesToGroupAccess;
+
     private LoanRepositoryInterface $loanRepository;
-    private GroupRepositoryInterface $groupRepository;
     private $data;
 
-    public function __construct(LoanRepositoryInterface $loanRepository, 
-                                GroupRepositoryInterface $groupRepository) 
+    public function __construct(LoanRepositoryInterface $loanRepository)
     {
         $this->loanRepository = $loanRepository;
-        $this->groupRepository = $groupRepository;
         $this->data = null;
     }
 
     public function getAllPayments() 
     {
-        return Payment::join('loans', 'payments.loan_id', '=', 'loans.id')
-                        ->join('users', 'users.id', '=', 'loans.user_id')
-                        ->get(['payments.*', 'loans.amount as loan_amount', 'users.name']);
+        $query = Payment::query()
+                        ->join('loans', 'payments.loan_id', '=', 'loans.id')
+                        ->join('users', 'users.id', '=', 'loans.user_id');
+        $this->scopeToAccessibleGroups($query, 'payments.group_id', 'payments.user_id');
+
+        return $query
+                        ->get([
+                            'payments.*',
+                            'loans.amount as loan_amount',
+                            \Illuminate\Support\Facades\DB::raw("CONCAT(users.first_name, ' ', users.last_name) as name"),
+                        ]);
     }
 
     public function getPaymentById($paymentId) 
     {
-        return Payment::findOrFail($paymentId);
+        $query = Payment::query();
+        $this->scopeToAccessibleGroups($query, 'payments.group_id', 'payments.user_id');
+
+        return $query->findOrFail($paymentId);
     }
 
     public function deletePayment($paymentId) 
     {
-        Payment::destroy($paymentId);
+        $this->getPaymentById($paymentId)->delete();
     }
 
     public function createPayment(array $paymentDetails) 
@@ -55,22 +64,25 @@ class PaymentRepository implements PaymentRepositoryInterface
 
     public function updatePayment($paymentId, array $newDetails) 
     {
-        return Payment::whereId($paymentId)->update($newDetails);
+        return $this->getPaymentById($paymentId)->update($newDetails);
     }
     
     public function getTotalAmountPayments($date = null)
     {
+        $query = Payment::query();
+        $this->scopeToAccessibleGroups($query, 'payments.group_id', 'payments.user_id');
+
         if(!empty($date))
         {
             $date = Carbon::parse($date);
-            return Payment::selectRaw('SUM(amount) AS total')
+            return $query->selectRaw('SUM(amount) AS total')
                             ->selectRaw('SUM(interest) AS interest')
-                            ->whereYear('payment_date', '=', $date->year)
-                            ->whereMonth('payment_date', '=', $date->month)
+                            ->whereYear('created_at', '=', $date->year)
+                            ->whereMonth('created_at', '=', $date->month)
                             ->get(); 
         }
 
-        return Payment::selectRaw('SUM(amount) AS total')
+        return $query->selectRaw('SUM(amount) AS total')
                         ->selectRaw('SUM(interest) AS interest')
                         ->get()
                         ->first(); 
@@ -78,28 +90,34 @@ class PaymentRepository implements PaymentRepositoryInterface
 
     public function getPaymentByLoan($loanId)
     {
-        return Payment::where('loan_id', $loanId)
+        $query = Payment::query();
+        $this->scopeToAccessibleGroups($query, 'payments.group_id', 'payments.user_id');
+
+        return $query->where('loan_id', $loanId)
                     ->get();
         
     }
     public function getPaymentByDate($loanId = null, $date)
     {
+        $query = Payment::query();
+        $this->scopeToAccessibleGroups($query, 'payments.group_id', 'payments.user_id');
+
         if(!empty($date))
         {
             $date = Carbon::parse($date);
             
             if(checkdate($date->month, $date->day, $date->year) && !empty($loanId))
             {
-                return Payment::whereYear('payment_date', '=', $date->year)
-                            ->whereMonth('payment_date', '=', $date->month)
+                return $query->whereYear('created_at', '=', $date->year)
+                ->whereMonth('created_at', '=', $date->month)
                             ->where('loan_id', $loanId)
                             ->get();
             }
 
             if(checkdate($date->month, $date->day, $date->year))
             {
-                return Payment::whereYear('payment_date', '=', $date->year)
-                                ->whereMonth('payment_date', '=', $date->month)
+                return $query->whereYear('created_at', '=', $date->year)
+                                ->whereMonth('created_at', '=', $date->month)
                                 ->get();
             }
         }
@@ -112,7 +130,10 @@ class PaymentRepository implements PaymentRepositoryInterface
 
     public function getPaymentAmounByLoan($loanId)
     {
-        return Payment::where('loan_id', $loanId)
+        $query = Payment::query();
+        $this->scopeToAccessibleGroups($query, 'payments.group_id', 'payments.user_id');
+
+        return $query->where('loan_id', $loanId)
                         ->selectRaw('SUM(amount) AS total_paid')
                         ->selectRaw('SUM(interest) AS interest')
                         ->first();                     
@@ -124,11 +145,16 @@ class PaymentRepository implements PaymentRepositoryInterface
 
         if($this->data)
         {
-            $total_paid = $this->getPaymentAmounByLoan($loanId)->total_paid;
+            $total_paid = (float) ($this->getPaymentAmounByLoan($loanId)->total_paid ?? 0);
 
             $remaing_payment = $this->data->amount - $total_paid;
 
-            $interest_rate = $this->groupRepository->getGroupById($this->data['type'])->interest_rate;
+            $interest_rate = InterestRate::query()
+                ->where('id', $this->data->interest_rate_id)
+                ->value('fee');
+            if ($interest_rate === null) {
+                return null;
+            }
             $interest = ($interest_rate * $remaing_payment) / 100;
 
             return [

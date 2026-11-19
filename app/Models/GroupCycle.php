@@ -20,6 +20,7 @@ class GroupCycle extends Model
         'trace_id',
         'start_date',
         'end_date',
+        'contribution_amount',
         'status'
     ];
     protected static function boot()

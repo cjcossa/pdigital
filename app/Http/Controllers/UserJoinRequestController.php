@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Interfaces\UserJoinRequestRepositoryInterface;
+use App\Models\Role;
 use Illuminate\Http\Request;
 use App\DTO\UserJoinData;
 use App\Helpers\ApiResponse;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class UserJoinRequestController extends Controller 
@@ -22,12 +24,22 @@ class UserJoinRequestController extends Controller
         try
         {
             $validated = $request->validate([
-                'rid' => 'required|uuid|exists:roles,id',
-                'tid' => 'required|uuid|exists:users,id',
                 'gid' => 'required|uuid|exists:groups,id',
-                'uid' => 'required|uuid|exists:users,id',
-               // 'gcid' => 'nullable|uuid' O ideal é associar ao grupo cycle no ato de aprovacao pelo gestor
+                'gcid' => [
+                    'nullable',
+                    'uuid',
+                    Rule::exists('group_cycles', 'id')
+                        ->where('group_id', $request->input('gid')),
+                ],
             ]);
+
+            $validated = [
+                'rid' => Role::query()->where('name', 'member')->firstOrFail()->id,
+                'tid' => $request->user()->id,
+                'gid' => $validated['gid'],
+                'uid' => $request->user()->id,
+                'gcid' => $validated['gcid'] ?? null,
+            ];
         
             parent::setResponse(
                 $this->_userJoinRequestRepository->createUserJoin(

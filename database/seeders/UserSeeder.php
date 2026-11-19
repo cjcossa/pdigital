@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Enums\Status;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -10,14 +11,16 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
+        $userId = (string) Str::uuid();
+
         User::create([
-            'id' => Str::uuid(),
+            'id' => $userId,
             'first_name' => 'João',
             'last_name' => 'Teste',
             'pin' => bcrypt('1234'),
             'primary_phone' => '840000000',
-            'status' => 1,
-            'trace_id' => Str::uuid(),
+            'status' => Status::ACTIVE->value,
+            'trace_id' => $userId,
         ]);
     }
 }

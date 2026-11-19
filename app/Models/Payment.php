@@ -12,12 +12,14 @@ class Payment extends Model
         'loan_id',
         'user_id',
         'group_id',
-        'user_wallet_id',
+        'wallet_code',
         'group_cycle_id',
         'trace_id',
+        'phone_number',
         'amount',
         'interest',
         'transaction_reference',
-        'description'
+        'description',
+        'created_at'
     ];
 }

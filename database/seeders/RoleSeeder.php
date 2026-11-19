@@ -36,5 +36,16 @@ class RoleSeeder extends Seeder
                 'updated_at' => Carbon::now(),
             ]
         );
+
+        Role::firstOrCreate(
+            ['name' => 'gestor'],
+            [
+                'description' => 'Gestor do grupo',
+                'status' => 'active',
+                'trace_id' => $user->id,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ]
+        );
     }
 }

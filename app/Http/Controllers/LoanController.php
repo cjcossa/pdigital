@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Interfaces\LoanRepositoryInterface;
 use App\Interfaces\PaymentRepositoryInterface;
+use App\Interfaces\GroupRepositoryInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -12,11 +13,16 @@ class LoanController extends Controller
 {
     private LoanRepositoryInterface $loanRepository;
     private PaymentRepositoryInterface $paymentRepository;
+    private GroupRepositoryInterface $groupRepository;
 
-    public function __construct(LoanRepositoryInterface $loanRepository, PaymentRepositoryInterface $paymentRepository) 
-    {
+    public function __construct(
+        LoanRepositoryInterface $loanRepository,
+        PaymentRepositoryInterface $paymentRepository,
+        GroupRepositoryInterface $groupRepository
+    ) {
         $this->loanRepository = $loanRepository;
         $this->paymentRepository = $paymentRepository;
+        $this->groupRepository = $groupRepository;
     }
 
     public function index(): JsonResponse 
@@ -28,39 +34,29 @@ class LoanController extends Controller
 
     public function store(Request $request): JsonResponse 
     {
-        // $loanDetails = $request->only([
-        //     'amount',
-        //     'user_id',
-        //     'amount',
-        //     'guarantor',
-        //     'loan_date',
-        //     'description',
-        //     'type'
-        // ]);
-
-         // Pega todos os campos do request que são relevantes
-        $loanDetails = $request->only([
-            'user_id',
-            'user_request_id',
-            'group_id',
-            'group_cycle_id',
-            'interest_rate_id',
-            'guarantor_id',
-            'trace_id',
-            'amount',
-            'phone_number',
-            'type',
-            'payment_date',
-            'status',
-            'transaction_reference',
-            'description'
+        $loanDetails = $request->validate([
+            'user_id' => 'required|uuid|exists:users,id',
+            'user_request_id' => 'nullable|uuid|exists:users,id',
+            'group_id' => 'required|uuid|exists:groups,id',
+            'group_cycle_id' => [
+                'nullable',
+                'uuid',
+                \Illuminate\Validation\Rule::exists('group_cycles', 'id')
+                    ->where('group_id', $request->input('group_id')),
+            ],
+            'interest_rate_id' => 'required|uuid|exists:interest_rates,id',
+            'guarantor_id' => 'nullable|uuid|exists:users,id',
+            'amount' => 'required|numeric|min:1',
+            'phone_number' => 'required|string',
+            'type' => 'required|string',
+            'payment_date' => 'required|date',
+            'status' => 'required|string',
+            'transaction_reference' => 'nullable|string',
+            'description' => 'nullable|string',
         ]);
-
-          // DEBUG: mostra no console (terminal do Laravel)
-        Log::info('2 Loan request data:', $loanDetails);
-
-        // Outra opção para ver direto no browser/console do Postman
-        // dd($loanDetails); // <- isto interrompe a execução e imprime o array
+        abort_unless($this->groupRepository->canManageGroup($request->user(), $loanDetails['group_id']), 403);
+        $this->assertGroupMember($loanDetails['user_id'], $loanDetails['group_id']);
+        $loanDetails['trace_id'] = $request->user()->id;
 
         $loan = $this->loanRepository->createLoan($loanDetails);
 
@@ -155,15 +151,20 @@ public function pay(Request $request, $loanId)
     public function update(Request $request): JsonResponse 
     {
         $loanId = $request->route('id');
-        $loanDetails = $request->only([
-            'user_id',
-            'amount',
-            'guarantor',
-            'loan_date',
-            'status',
-            'description',
-            'type'
+        $loan = $this->loanRepository->getLoanById($loanId);
+        abort_unless($this->groupRepository->canManageGroup($request->user(), $loan->group_id), 403);
+        $loanDetails = $request->validate([
+            'user_id' => 'sometimes|uuid|exists:users,id',
+            'amount' => 'sometimes|numeric|min:1',
+            'guarantor_id' => 'sometimes|nullable|uuid|exists:users,id',
+            'payment_date' => 'sometimes|date',
+            'status' => 'sometimes|string',
+            'description' => 'sometimes|nullable|string',
+            'type' => 'sometimes|string',
         ]);
+        if (isset($loanDetails['user_id'])) {
+            $this->assertGroupMember($loanDetails['user_id'], $loan->group_id);
+        }
 
         return response()->json([
             'data' => $this->loanRepository->updateLoan($loanId, $loanDetails)
@@ -173,6 +174,8 @@ public function pay(Request $request, $loanId)
     public function destroy(Request $request): JsonResponse 
     {
         $loanId = $request->route('id');
+        $loan = $this->loanRepository->getLoanById($loanId);
+        abort_unless($this->groupRepository->canManageGroup($request->user(), $loan->group_id), 403);
         $this->loanRepository->deleteLoan($loanId);
 
         return response()->json(null, Response::HTTP_NO_CONTENT);
@@ -200,5 +203,16 @@ public function pay(Request $request, $loanId)
         return response()->json([
             'data' => $this->loanRepository->getLoansToPay()
         ]);
+    }
+
+    private function assertGroupMember(string $userId, string $groupId): void
+    {
+        $isMember = \Illuminate\Support\Facades\DB::table('group_users')
+            ->where('user_id', $userId)
+            ->where('group_id', $groupId)
+            ->where('status', \App\Enums\Status::ACTIVE->value)
+            ->exists();
+
+        abort_unless($isMember, 422, 'O utilizador não pertence ao grupo seleccionado.');
     }
 }

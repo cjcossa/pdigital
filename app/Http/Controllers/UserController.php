@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\DTO\UserData;
 use App\Helpers\ApiResponse;
+use App\Interfaces\GroupRepositoryInterface;
 use App\Interfaces\UserRepositoryInterface;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\JsonResponse;
@@ -15,10 +16,15 @@ use Illuminate\Validation\ValidationException;
 class UserController extends Controller 
 {
     private UserRepositoryInterface $_userRepository;
+    private GroupRepositoryInterface $_groupRepository;
 
-    public function __construct(UserRepositoryInterface $userRepository) 
+    public function __construct(
+        UserRepositoryInterface $userRepository,
+        GroupRepositoryInterface $groupRepository
+    )
     {
         $this->_userRepository = $userRepository;
+        $this->_groupRepository = $groupRepository;
     }
 
     public function index(): JsonResponse 
@@ -30,6 +36,8 @@ class UserController extends Controller
 
     public function store(Request $request): JsonResponse 
     {
+        abort_unless($this->_groupRepository->isSystemAdmin($request->user()), 403);
+
         $userDetails = $request->only([
             'username',
             'name',
@@ -57,6 +65,8 @@ class UserController extends Controller
 
     public function update(Request $request): JsonResponse 
     {
+        abort_unless($this->_groupRepository->isSystemAdmin($request->user()), 403);
+
         $userId = $request->route('id');
         $userDetails = $request->only([
             'name',
@@ -72,6 +82,8 @@ class UserController extends Controller
 
     public function destroy(Request $request): JsonResponse 
     {
+        abort_unless($this->_groupRepository->isSystemAdmin($request->user()), 403);
+
         $userId = $request->route('id');
         $this->_userRepository->deleteUser($userId);
 

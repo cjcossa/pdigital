@@ -8,12 +8,19 @@ use App\Models\Saving;
 use Carbon\Carbon;
 use App\Models\GroupCycle;
 use Illuminate\Support\Facades\DB;
+use App\Repositories\Concerns\ScopesToGroupAccess;
 
 class SavingRepository implements SavingRepositoryInterface 
 {
+    use ScopesToGroupAccess;
+
     public function getAllSavings() 
     {
-        return Saving::join('users', 'users.id', '=', 'savings.user_id')
+        $query = Saving::query()
+                    ->join('users', 'users.id', '=', 'savings.user_id');
+        $this->scopeToAccessibleGroups($query, 'savings.group_id', 'savings.user_id');
+
+        return $query
                     ->get([
                         'savings.*',
                         DB::raw("CONCAT(users.first_name, ' ', users.last_name) as name"),
@@ -22,17 +29,23 @@ class SavingRepository implements SavingRepositoryInterface
 
     public function getSavingById($savingId) 
     {
-        return Saving::findOrFail($savingId);
+        $query = Saving::query();
+        $this->scopeToAccessibleGroups($query, 'savings.group_id', 'savings.user_id');
+
+        return $query->findOrFail($savingId);
     }
 
     public function getSavingsByCycle($cycleId)
     {
-        return Saving::where('group_cycle_id', $cycleId)->get();
+        $query = Saving::query();
+        $this->scopeToAccessibleGroups($query, 'savings.group_id', 'savings.user_id');
+
+        return $query->where('group_cycle_id', $cycleId)->get();
     }
 
     public function deleteSaving($savingId) 
     {
-        Saving::destroy($savingId);
+        $this->getSavingById($savingId)->delete();
     }
     public function createSaving(array $savingDetails)
     {
@@ -46,14 +59,17 @@ class SavingRepository implements SavingRepositoryInterface
     
     public function updateSaving($savingId, array $newDetails) 
     {
-        $saving = Saving::findOrFail($savingId);
+        $saving = $this->getSavingById($savingId);
         $saving->update($newDetails);
         return $saving;
     }
 
     public function getSavingBalanceByUser($userId)
     {
-        return Saving::where('user_id', $userId)
+        $query = Saving::query();
+        $this->scopeToAccessibleGroups($query, 'savings.group_id', 'savings.user_id');
+
+        return $query->where('user_id', $userId)
                         ->selectRaw('SUM(amount) AS balance')
                         ->selectRaw('SUM(social_amount) AS samount')
                         ->first();                     
@@ -61,35 +77,44 @@ class SavingRepository implements SavingRepositoryInterface
 
     public function getTotalAmountSavings($date = null)
     {
+        $query = Saving::query();
+        $this->scopeToAccessibleGroups($query, 'savings.group_id', 'savings.user_id');
+
         if(!empty($date))
         {
             $date = Carbon::parse($date);
-            return Saving::selectRaw('SUM(amount) AS total')
+            return $query->selectRaw('SUM(amount) AS total')
                             ->selectRaw('SUM(social_amount) AS samount')
                             ->whereYear('saving_date', '=', $date->year)
                             ->whereMonth('saving_date', '=', $date->month)
                             ->first(); 
         }
 
-        return Saving::selectRaw('SUM(amount) AS total')
+        return $query->selectRaw('SUM(amount) AS total')
                         ->selectRaw('SUM(social_amount) AS samount')
                         ->first(); 
     }
 
     public function getSavingByUser($userId)
     {
-        return Saving::where('user_id', $userId)
+        $query = Saving::query();
+        $this->scopeToAccessibleGroups($query, 'savings.group_id', 'savings.user_id');
+
+        return $query->where('user_id', $userId)
                         ->get();
     }
     public function getSavingByDate($userId = null, $date)
     {
+        $query = Saving::query();
+        $this->scopeToAccessibleGroups($query, 'savings.group_id', 'savings.user_id');
+
         if(!empty($date))
         {
             $date = Carbon::parse($date);
             
             if(checkdate($date->month, $date->day, $date->year) && !empty($userId))
             {
-                return Saving::whereYear('saving_date', '=', $date->year)
+                return $query->whereYear('saving_date', '=', $date->year)
                             ->whereMonth('saving_date', '=', $date->month)
                             ->where('user_id', $userId)
                             ->get();
@@ -97,7 +122,7 @@ class SavingRepository implements SavingRepositoryInterface
 
             if(checkdate($date->month, $date->day, $date->year))
             {
-                return Saving::whereYear('saving_date', '=', $date->year)
+                return $query->whereYear('saving_date', '=', $date->year)
                                 ->whereMonth('saving_date', '=', $date->month)
                                 ->get();
             }
@@ -107,7 +132,7 @@ class SavingRepository implements SavingRepositoryInterface
         {
             return $this->getSavingByUser($userId);
         }
-        return Saving::all();
+        return $query->get();
 
     }
 

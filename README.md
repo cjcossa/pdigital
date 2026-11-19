@@ -64,3 +64,26 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Conta de administrador
+
+O seeder cria a conta administrativa a partir de `ADMIN_USER_PHONE` e
+`ADMIN_USER_PIN` definidos no `.env`. Não há credenciais padrão no código.
+Configure ambas as variáveis antes de executar `php artisan db:seed`; o seeder
+é idempotente para o telefone configurado.
+
+O papel `admin` é global e é associado através de `user_roles`. Os papéis
+`gestor` e `member` continuam associados a cada grupo por `group_users.role_id`.
+O login devolve o papel efetivo; contas `member` são destinadas à aplicação
+mobile e não iniciam sessão na dashboard web.
+
+## Acesso por grupo
+
+As rotas de grupos, ciclos, utilizadores e dados financeiros exigem token
+Sanctum. O administrador pode consultar dados globais; gestores só consultam e
+alteram dados financeiros dos grupos que possuem ou onde têm uma associação
+activa com o papel `gestor`. As contas `member` só consultam os próprios
+registos nos grupos a que pertencem. A API também valida o acesso ao grupo em leituras por ID,
+criação, alteração e remoção, sem confiar no `owner_id` ou `trace_id` enviado
+pelo cliente. A atribuição de papéis e a gestão de pré-utilizadores ficam
+reservadas ao administrador.

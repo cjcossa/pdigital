@@ -2,7 +2,6 @@
 
 namespace App\Repositories;
 
-use App\Consts\Group;
 use App\DTO\PreUserData;
 use App\DTO\UserData;
 use App\Enums\Status;
@@ -16,6 +15,7 @@ use Laravel\Sanctum\PersonalAccessToken;
 use Laravel\Sanctum\NewAccessToken;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use App\Interfaces\GroupRepositoryInterface;
 
 class UserRepository extends BaseRepository implements UserRepositoryInterface 
 {
@@ -30,13 +30,31 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface
     }
     public function getAllUsers() 
     {
-        return User::join('groups', 'users.group', '=', 'groups.id')
-                    ->get(['users.*', 'groups.name as group_name']);
+        $query = User::query()
+                    ->leftJoin('group_users', 'group_users.user_id', '=', 'users.id')
+                    ->leftJoin('groups', 'groups.id', '=', 'group_users.group_id');
+        $this->scopeUsersToCurrentUser($query);
+
+        return $query->get([
+                        'users.*',
+                        'group_users.group_id as group_id',
+                        'groups.name as group_name',
+                    ]);
     }
 
     public function getUserById($UserId) 
     {
-        return User::findOrFail($UserId);
+        $query = User::query()
+                    ->leftJoin('group_users', 'group_users.user_id', '=', 'users.id')
+                    ->leftJoin('groups', 'groups.id', '=', 'group_users.group_id')
+                    ->where('users.id', $UserId);
+        $this->scopeUsersToCurrentUser($query);
+
+        return $query->firstOrFail([
+                        'users.*',
+                        'group_users.group_id as group_id',
+                        'groups.name as group_name',
+                    ]);
     }
 
     public function deleteUser($UserId) 
@@ -119,47 +137,62 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface
 
     public function getUsersByGroup($group)
     {
-        return User::where('group', $group)
-                    ->get();
+        $user = Auth::user();
+        $query = User::query()
+            ->join('group_users', 'group_users.user_id', '=', 'users.id')
+            ->where('group_users.group_id', $group);
+
+        if ($user === null) {
+            $query->whereRaw('1 = 0');
+        } elseif (! app(GroupRepositoryInterface::class)->isSystemAdmin($user)
+            && ! app(GroupRepositoryInterface::class)->canManageGroup($user, $group)) {
+            $query->where('group_users.user_id', $user->id);
+        }
+
+        return $query->get(['users.*']);
     }
     public function getUsersToSaving()
     {
-        return User::where('group', '<>', Group::G_ETUSR)
-                    ->get();
+        $user = Auth::user();
+        $query = User::query()
+                    ->join('group_users', 'group_users.user_id', '=', 'users.id')
+                    ->where('group_users.status', Status::ACTIVE->value);
+
+        if ($user === null) {
+            $query->whereRaw('1 = 0');
+        } elseif (app(GroupRepositoryInterface::class)->isSystemAdmin($user)) {
+            // Administrators can select members from any group.
+        } elseif (app(GroupRepositoryInterface::class)->isGroupManager($user)) {
+            $query->whereIn(
+                'group_users.group_id',
+                app(GroupRepositoryInterface::class)->getAccessibleGroupIds($user)
+            );
+        } else {
+            $query->where('users.id', $user->id);
+        }
+
+        return $query->distinct()->get(['users.*']);
     }
 
     public function loginUser(UserData $userData)
     {
-       //$userDetails['pin'] = Hash::make($userDetails['pin']);
-        // if(Auth::attempt($userDetails))
-        // {
-        //     $user = Auth::user();
-           
-        //     $token = $this->createAccessToken($user->primary_phone);
-            
-        //     return $this->getAccessToken($token);
-        // }
-
-        // return $userDetails;
-
         try
         {
-            parent::setData(
-                $this->_userModel->where('primary_phone', $userData->primaryPhone)->first()
-            );
+            $user = $this->_userModel
+                ->where('primary_phone', $userData->primaryPhone)
+                ->first();
 
-            if(parent::getData())
-            {
+            if ($user && Hash::check($userData->pin, $user->pin)) {
                 parent::setMessage(__('messages.user_loggedin'));
-                parent::setStatus(Hash::check($userData->pin, parent::getData()->pin));
-
-                parent::setData(
-                $this->getAccessToken(
-                    $this->createAccessToken(parent::getData()->primary_phone)
-                    )
-                );
+                parent::setStatus(true);
+                parent::setData($this->getAccessToken(
+                    $this->createAccessToken($user->primary_phone)
+                ));
+            } else {
+                parent::setMessage(__('auth.failed'));
+                parent::setStatus(false);
+                parent::setData(null);
             }
-            
         }catch(\Exception $e)
         {
             parent::setMessage(__('messages.register_failed'). $e->getMessage());
@@ -203,15 +236,64 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface
 
     public function getAccessToken($token)
     {
+        $user = $token->accessToken->tokenable;
 
         return [
-            'primary_phone' => $token->accessToken->tokenable->primary_phone,
-            'name' => $token->accessToken->tokenable->first_name,
+            'primary_phone' => $user->primary_phone,
+            'name' => $user->first_name,
             'token' => $token->plainTextToken,
-            //'group' => $token->accessToken->tokenable->group,
-            'id' => $token->accessToken->tokenable->id,
-            //'permissions' => $this->groupRepository->getGroupById($token->accessToken->tokenable->group)->permissions
+            'id' => $user->id,
+            'role' => $this->getUserRole($user),
         ];
+    }
+
+    private function getUserRole(User $user): string
+    {
+        $isAdmin = DB::table('user_roles')
+            ->join('roles', 'roles.id', '=', 'user_roles.role_id')
+            ->where('user_roles.user_id', $user->id)
+            ->where('roles.name', 'admin')
+            ->exists();
+
+        if ($isAdmin) {
+            return 'admin';
+        }
+
+        $isManager = DB::table('group_users')
+            ->join('roles', 'roles.id', '=', 'group_users.role_id')
+            ->where('group_users.user_id', $user->id)
+            ->where('group_users.status', Status::ACTIVE->value)
+            ->where('roles.name', 'gestor')
+            ->exists()
+            || DB::table('groups')
+                ->where('owner_id', $user->id)
+                ->exists();
+
+        return $isManager ? 'gestor' : 'member';
+    }
+
+    private function scopeUsersToCurrentUser($query): void
+    {
+        $user = Auth::user();
+        if ($user === null) {
+            $query->whereRaw('1 = 0');
+            return;
+        }
+
+        $groupRepository = app(GroupRepositoryInterface::class);
+        if ($groupRepository->isSystemAdmin($user)) {
+            return;
+        }
+
+        if ($groupRepository->isGroupManager($user)) {
+            $query->whereIn(
+                'group_users.group_id',
+                $groupRepository->getAccessibleGroupIds($user)
+            );
+            return;
+        }
+
+        $query->where('users.id', $user->id);
     }
     
 }

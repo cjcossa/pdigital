@@ -2,18 +2,21 @@
 
 namespace App\Repositories;
 
-use App\Consts\Group;
 use App\Consts\State;
 use App\Interfaces\LoanRepositoryInterface;
 use App\Interfaces\PaymentRepositoryInterface;
 use App\Interfaces\SavingRepositoryInterface;
 use App\Interfaces\UserRepositoryInterface;
 use App\Models\Loan;
+use App\Repositories\Concerns\ScopesToGroupAccess;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class LoanRepository implements LoanRepositoryInterface
 {
+    use ScopesToGroupAccess;
+
     private SavingRepositoryInterface $savingRepository;
     private UserRepositoryInterface $userRepository;
     private $data;
@@ -28,18 +31,28 @@ class LoanRepository implements LoanRepositoryInterface
 
     public function getAllLoans() 
     {
-        return Loan::join('users', 'users.id', '=', 'loans.user_id')
-                    ->get(['loans.*', 'users.name']);
+        $query = Loan::query()
+                    ->join('users', 'users.id', '=', 'loans.user_id');
+        $this->scopeToAccessibleGroups($query, 'loans.group_id', 'loans.user_id');
+
+        return $query
+                    ->get([
+                        'loans.*',
+                        DB::raw("CONCAT(users.first_name, ' ', users.last_name) as name"),
+                    ]);
     }
 
     public function getLoanById($loanId) 
     {
-        return Loan::findOrFail($loanId);
+        $query = Loan::query();
+        $this->scopeToAccessibleGroups($query, 'loans.group_id', 'loans.user_id');
+
+        return $query->findOrFail($loanId);
     }
 
     public function deleteLoan($loanId) 
     {
-        Loan::destroy($loanId);
+        $this->getLoanById($loanId)->delete();
     }
 
     // public function createLoan(array $loanDetails) 
@@ -64,54 +77,63 @@ class LoanRepository implements LoanRepositoryInterface
 
     public function updateLoan($loanId, array $newDetails) 
     {
-        return Loan::whereId($loanId)->update($newDetails);
+        return $this->getLoanById($loanId)->update($newDetails);
     }
     
     public function getTotalAmountLoans($date = null)
     {
+        $query = Loan::query();
+        $this->scopeToAccessibleGroups($query, 'loans.group_id', 'loans.user_id');
+
         if(!empty($date))
         {
             $date = Carbon::parse($date);
-            return Loan::selectRaw('SUM(amount) AS total')
-                            ->whereYear('loan_date', '=', $date->year)
-                            ->whereMonth('loan_date', '=', $date->month)
+            return $query->selectRaw('SUM(amount) AS total')
+                            ->whereYear('loans.created_at', '=', $date->year)
+                            ->whereMonth('loans.created_at', '=', $date->month)
                             ->get(); 
         }
 
-        return Loan::selectRaw('SUM(amount) AS total')
+        return $query->selectRaw('SUM(amount) AS total')
                         ->get()
                         ->first(); 
     }
 
     public function getLoanByUser($userId, $status = null)
     {
+        $query = Loan::query();
+        $this->scopeToAccessibleGroups($query, 'loans.group_id', 'loans.user_id');
+
         if($status == null)
         {
-            return Loan::where('user_id', $userId)
+            return $query->where('loans.user_id', $userId)
                         ->get();
         }
-        return Loan::where('user_id', $userId)
-                    ->where('status', $status)
+        return $query->where('loans.user_id', $userId)
+                    ->where('loans.status', (string) $status)
                     ->get();
     }
     public function getLoanByDate($userId = null, $date)
     {
+        $query = Loan::query();
+        $this->scopeToAccessibleGroups($query, 'loans.group_id', 'loans.user_id');
+
         if(!empty($date))
         {
             $date = Carbon::parse($date);
             
             if(checkdate($date->month, $date->day, $date->year) && !empty($userId))
             {
-                return Loan::whereYear('loan_date', '=', $date->year)
-                            ->whereMonth('loan_date', '=', $date->month)
-                            ->where('user_id', $userId)
+                return $query->whereYear('loans.created_at', '=', $date->year)
+                            ->whereMonth('loans.created_at', '=', $date->month)
+                            ->where('loans.user_id', $userId)
                             ->get();
             }
 
             if(checkdate($date->month, $date->day, $date->year))
             {
-                return Loan::whereYear('loan_date', '=', $date->year)
-                                ->whereMonth('loan_date', '=', $date->month)
+                return $query->whereYear('loans.created_at', '=', $date->year)
+                                ->whereMonth('loans.created_at', '=', $date->month)
                                 ->get();
             }
         }
@@ -130,17 +152,9 @@ class LoanRepository implements LoanRepositoryInterface
             return false;
 
         $this->data = $this->savingRepository->getSavingBalanceByUser($userId);
-        
-        $this->data->balance *= 2;
+        $balance = (float) ($this->data->balance ?? 0);
 
-        if($this->data->balance >= $loanDetails['amount'])
-        {
-            return true;
-        }
-
-        $this->data = $this->userRepository->getUserById($userId);
-
-        if($this->data->group == Group::G_ETUSR)
+        if($balance * 2 >= $loanDetails['amount'])
         {
             return true;
         }
@@ -150,9 +164,16 @@ class LoanRepository implements LoanRepositoryInterface
     
     public function getLoansToPay()
     {
-        return Loan::join('users', 'users.id', '=', 'loans.user_id')
-                    ->where('status', '<>', State::L_PDSTUS)
-                    ->get(['loans.*', 'users.name']);
+        $query = Loan::query()
+                    ->join('users', 'users.id', '=', 'loans.user_id');
+        $this->scopeToAccessibleGroups($query, 'loans.group_id', 'loans.user_id');
+
+        return $query
+                    ->where('loans.status', '<>', (string) State::L_PDSTUS)
+                    ->get([
+                        'loans.*',
+                        DB::raw("CONCAT(users.first_name, ' ', users.last_name) as name"),
+                    ]);
     }
 
 
@@ -185,7 +206,7 @@ class LoanRepository implements LoanRepositoryInterface
 
         if ($remaining <= 0) {
             $this->updateLoan($loanId, [
-                'status' => 'paid'
+                'status' => (string) State::L_PDSTUS
             ]);
         }
     }
