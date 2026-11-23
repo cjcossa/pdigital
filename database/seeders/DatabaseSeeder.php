@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             GroupSeeder::class,
             PeriodicitiesSeeder::class,
             GroupCycleSeeder::class,
+            MemberUserSeeder::class,
             InterestModeSeeder::class,   // ← novo
             InterestRateSeeder::class,   // agora seguro
             SavingsSeeder::class,        // ← executado por último

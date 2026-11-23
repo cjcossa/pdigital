@@ -11,16 +11,19 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        $userId = (string) Str::uuid();
-
-        User::create([
-            'id' => $userId,
-            'first_name' => 'João',
-            'last_name' => 'Teste',
-            'pin' => bcrypt('1234'),
+        $user = User::firstOrNew([
             'primary_phone' => '840000000',
-            'status' => Status::ACTIVE->value,
-            'trace_id' => $userId,
         ]);
+
+        if (! $user->exists) {
+            $user->id = (string) Str::uuid();
+            $user->trace_id = $user->id;
+        }
+
+        $user->first_name = 'João';
+        $user->last_name = 'Teste';
+        $user->pin = bcrypt('1234');
+        $user->status = Status::ACTIVE->value;
+        $user->save();
     }
 }
